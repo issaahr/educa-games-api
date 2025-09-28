@@ -26,7 +26,7 @@ jobs:
         run: docker exec educa-games-api chmod +x ./gradlew
 
       - name: Check code style
-        run: docker exec educa-games-api ./gradlew spotlessCheck checkstyleMain
+        run: docker exec educa-games-api sh -c "./gradlew spotlessCheck checkstyleMain"
 
       #- name: Run API tests
       #  run: docker exec educa-games-api ./gradlew test
