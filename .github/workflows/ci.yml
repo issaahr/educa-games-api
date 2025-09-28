@@ -16,17 +16,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Compose
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build and run containers
-        run: docker compose up -d --build
+        run: docker compose up -d --build --no-cache
 
-      #- name: Run API tests
-       # run: docker exec educa-games-api ./gradlew test
+      - name: Make gradlew executable
+        run: docker exec educa-games-api chmod +x ./gradlew
 
       - name: Check code style
         run: docker exec educa-games-api ./gradlew spotlessCheck checkstyleMain
+
+      #- name: Run API tests
+      #  run: docker exec educa-games-api ./gradlew test
 
       - name: Stop containers
         if: always()
