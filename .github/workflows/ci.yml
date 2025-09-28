@@ -20,13 +20,16 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and run containers
-        run: docker compose up -d --build --no-cache
+        run: |
+          docker compose build --no-cache
+          docker compose up -d
+
 
       - name: Make gradlew executable
         run: docker exec educa-games-api chmod +x ./gradlew
 
       - name: Check code style
-        run: docker exec educa-games-api sh -c "./gradlew spotlessCheck checkstyleMain"
+        run: docker exec educa-games-api ./gradlew spotlessCheck checkstyleMain
 
       #- name: Run API tests
       #  run: docker exec educa-games-api ./gradlew test
