@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  educagames-api:
+    build: .
+    container_name: educa-games-api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    networks:
+      - educa-games-network
+    restart: unless-stopped
+    volumes:
+      - .:/app
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: educacao_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - educa-games-network
+
+volumes:
+  postgres_data:
+
+networks:
+  educa-games-network:
+    driver: bridge
