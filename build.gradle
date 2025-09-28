@@ -37,18 +37,31 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Spotless para formatação automática e limpeza de de espaços em branco
+// Spotless
 spotless {
     java {
-        googleJavaFormat()
         removeUnusedImports()
+        importOrder 'java', 'javax', 'org', 'com', ''
+        indentWithSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
+        encoding 'UTF-8'
+
+        // Remove linhas em branco consecutivas
+        custom 'removeExtraBlankLines', { str ->
+            str.replaceAll(/(?m)^\s*\n{2,}/, '\n')
+        }
     }
 }
+
 
 // Checkstyle
 checkstyle {
     toolVersion = '10.12.7'
-    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+    configFile = file('config/checkstyle/checkstyle.xml')
+}
+
+// Compila com UTF-8 para garantir consistência entre Windows e Linux
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
 }

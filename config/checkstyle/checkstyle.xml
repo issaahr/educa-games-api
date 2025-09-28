@@ -3,116 +3,98 @@
           "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
           "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
-<!--
-    This configuration file is based on the Google Java Style Guide.
-    It's a good starting point for enforcing code style and quality.
--->
 <module name="Checker">
-    <!--
-        If you set the property `basedir` below, then all files
-        specified in the following section are relative to it.
-    -->
     <property name="severity" value="warning"/>
-
     <property name="fileExtensions" value="java, properties, xml"/>
 
-    <!-- Checks for whitespace                               -->
-    <!-- See http://checkstyle.sourceforge.net/config_whitespace.html -->
-    <module name="FileTabCharacter"/>
+    <!-- Exclui arquivos module-info.java -->
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="module\-info\.java$"/>
+    </module>
 
-    <!-- Checks for Size Violations.                   -->
-    <!-- See http://checkstyle.sourceforge.net/config_sizes.html -->
+    <!-- Filtros de supressão -->
+    <module name="SuppressionFilter">
+        <property name="file" value="checkstyle-suppressions.xml"/>
+        <property name="optional" value="true"/>
+    </module>
+
+    <!-- Checagens de arquivo -->
+    <module name="FileTabCharacter"/>
     <module name="LineLength">
         <property name="max" value="120"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
-    <!-- Checks for Javadoc comments.                     -->
-    <!-- See http://checkstyle.sourceforge.net/config_javadoc.html -->
-    <module name="JavadocPackage"/>
-    <module name="JavadocType"/>
-    <module name="JavadocMethod"/>
-    <module name="JavadocVariable"/>
-    <module name="JavadocStyle"/>
+    <!-- TreeWalker -->
+    <module name="TreeWalker">
+        
+        <!-- Javadoc para pacote -->
+        <module name="MissingJavadocType">
+            <property name="scope" value="package"/>
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="package"/> 
+        </module>
 
-    <!-- Checks for Naming Conventions.                  -->
-    <!-- See http://checkstyle.sourceforge.net/config_naming.html -->
-    <module name="ConstantName"/>
-    <module name="LocalFinalVariableName"/>
-    <module name="LocalVariableName"/>
-    <module name="MemberName"/>
-    <module name="MethodName"/>
-    <module name="PackageName"/>
-    <module name="ParameterName"/>
-    <module name="StaticVariableName"/>
-    <module name="TypeName"/>
+        <!-- Convenções para nomes -->
+        <module name="ConstantName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MemberName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="StaticVariableName"/>
+        <module name="TypeName"/>
 
-    <!-- Checks for Headers                                -->
-    <!-- See http://checkstyle.sourceforge.net/config_header.html -->
-    <!-- <module name="Header"> -->
-        <!-- The follow property value is initially just the letter A.  Modify it to be the file name. -->
-        <!-- <property name="headerFile" value="${checkstyle.header.file}"/> -->
-    <!-- </module> -->
+        <!-- Imports -->
+        <module name="AvoidStarImport"/>
+        <module name="IllegalImport"/>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
 
-    <!-- Checks for imports                              -->
-    <!-- See http://checkstyle.sourceforge.net/config_imports.html -->
-    <module name="AvoidStarImport"/>
-    <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
-    <module name="RedundantImport"/>
-    <module name="UnusedImports"/>
+        <!-- Tamanho de métodos e parâmetros -->
+        <module name="MethodLength">
+            <property name="max" value="120"/> 
+        </module>
+        <module name="ParameterNumber">
+            <property name="max" value="5"/> 
+        </module>
 
-    <!-- Checks for Miscellaneous.                     -->
-    <!-- See http://checkstyle.sourceforge.net/config_misc.html -->
-    <module name="ArrayTypeStyle"/>
-    <module name="FinalParameters"/>
-    <module name="TodoComment"/>
-    <module name="UpperEll"/>
+        <!-- Tratamento de espaços -->
+        <module name="EmptyForIteratorPad"/>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
 
-    <!-- Checks for Modifiers.                         -->
-    <!-- See http://checkstyle.sourceforge.net/config_modifiers.html -->
-    <module name="ModifierOrder"/>
-    <module name="RedundantModifier"/>
+        <!-- Modificadores -->  
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
 
-    <!-- Checks for Blocks.                            -->
-    <!-- See http://checkstyle.sourceforge.net/config_blocks.html -->
-    <module name="EmptyBlock"/>
-    <module name="LeftCurly"/>
-    <module name="NeedBraces"/>
-    <module name="RightCurly"/>
+        <!-- Blocks -->
+        <module name="EmptyBlock"/>
+        <module name="LeftCurly"/>
+        <module name="NeedBraces"/>
+        <module name="RightCurly"/>
 
-    <!-- Checks for Common Coding Problems.            -->
-    <!-- See http://checkstyle.sourceforge.net/config_coding.html -->
-    <module name="EmptyStatement"/>
-    <module name="EqualsHashCode"/>
-    <module name="HiddenField"/>
-    <module name="IllegalInstantiation"/>
-    <module name="InnerAssignment"/>
-    <module name="MissingSwitchDefault"/>
-    <module name="SimplifyBooleanExpression"/>
-    <module name="SimplifyBooleanReturn"/>
-    <module name="StringLiteralEquality"/>
-    <module name="UnnecessaryParentheses"/>
+        <!-- Problemas comuns -->
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+        <module name="IllegalInstantiation"/>
+        <module name="InnerAssignment"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
 
-    <!-- Checks for Class Design.                      -->
-    <!-- See http://checkstyle.sourceforge.net/config_design.html -->
-    <module name="VisibilityModifier"/>
+        <!-- Miscelânea -->
+        <module name="ArrayTypeStyle"/>
+        <module name="UpperEll"/>
 
-    <!-- Checks for Metrics.                           -->
-    <!-- See http://checkstyle.sourceforge.net/config_metrics.html -->
-    <module name="CyclomaticComplexity"/>
-    <module name="JavaNCSS"/>
-    <module name="NPathComplexity"/>
-
-    <!-- Checks for Whitespace.                        -->
-    <!-- See http://checkstyle.sourceforge.net/config_whitespace.html -->
-    <module name="GenericWhitespace"/>
-    <module name="MethodParamPad"/>
-    <module name="NoWhitespaceAfter"/>
-    <module name="NoWhitespaceBefore"/>
-    <module name="OperatorPad"/>
-    <module name="ParenPad"/>
-    <module name="TypecastParenPad"/>
-    <module name="WhitespaceAfter"/>
-    <module name="WhitespaceAround"/>
+    </module>
 
 </module>

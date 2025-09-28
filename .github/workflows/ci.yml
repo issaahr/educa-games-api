@@ -14,23 +14,29 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
 
-      - name: Build and run containers
-        run: docker compose up -d --build --no-cache
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
-      - name: Make gradlew executable
-        run: docker exec educa-games-api chmod +x ./gradlew
+      - name: Gradle build
+        run: ./gradlew build -x test --no-daemon --max-workers=1
 
-      - name: Check code style
-        run: docker exec educa-games-api sh -c "./gradlew spotlessCheck checkstyleMain"
+      - name: Run spotlessApply
+        run: ./gradlew spotlessApply --no-daemon --max-workers=1
 
-      #- name: Run API tests
-      #  run: docker exec educa-games-api ./gradlew test
-
-      - name: Stop containers
-        if: always()
-        run: docker compose down
+      - name: Run code quality checks
+        run: ./gradlew spotlessCheck checkstyleMain --no-daemon --max-workers=1

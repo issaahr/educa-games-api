@@ -16,19 +16,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-  /**
-   * Configura os mapeamentos de CORS para todos os endpoints da aplicação.
-   *
-   * @param registry objeto usado para registrar as regras de CORS
-   */
-  @Override
-  public void addCorsMappings(@NonNull CorsRegistry registry) {
-    registry
-        .addMapping("/**")
-        // No momento, libera acesso apenas para a origem do frontend local
-        .allowedOrigins("http://localhost:5173")
-        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        .allowedHeaders("*")
-        .allowCredentials(true);
-  }
+    /**
+     * Configura os mapeamentos de CORS para todos os endpoints da aplicação.
+     *
+     * @param registry objeto usado para registrar as regras de CORS
+     */
+    @Override
+    public void addCorsMappings(@NonNull CorsRegistry registry) {
+        registry.addMapping("/**")
+                // No momento, libera acesso apenas para a origem do frontend rodando localmente
+                .allowedOrigins("http://localhost:5173")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
 }

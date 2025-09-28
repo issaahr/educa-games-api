@@ -1,0 +1,53 @@
+# EditorConfig para EducaGames API
+# https://editorconfig.org
+
+root = true
+
+# ==========================
+# Regras globais para todos os arquivos
+# ==========================
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==========================
+# Regras para arquivos Java
+# ==========================
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+# Remove trailing whitespace
+trim_trailing_whitespace = true
+# Garante linha final
+insert_final_newline = true
+
+# ==========================
+# Regras para arquivos XML, como checkstyle-suppressions.xml
+# ==========================
+[*.xml]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==========================
+# Regras para arquivos de propriedades
+# ==========================
+[*.properties]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ==========================
+# Regras para arquivos Gradle e Groovy
+# ==========================
+[*.gradle]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
