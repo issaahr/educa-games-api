@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Não exigir Javadoc para classes óbvias -->
+    <suppress checks="MissingJavadocType" files=".*Application\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Config\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Entity\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Repository\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Request\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Response\.java"/>
+    <suppress checks="MissingJavadocType" files=".*Exception\.java"/>
+    
+    <!-- Não exigir Javadoc para métodos simples -->
+    <suppress checks="MissingJavadocMethod" files=".*Entity\.java"/>
+    <suppress checks="MissingJavadocMethod" files=".*Request\.java"/>
+    <suppress checks="MissingJavadocMethod" files=".*Response\.java"/>
+    
+</suppressions>

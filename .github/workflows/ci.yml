@@ -1,0 +1,35 @@
+name: CI - EducaGames API
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start containers
+        run: |
+          docker compose up -d --build
+          docker exec educa-games-api chmod +x ./gradlew
+          docker exec educa-games-api sh -c "apk add --no-cache dos2unix && dos2unix /app/config/checkstyle/checkstyle.xml"
+
+      - name: Build project
+        run: docker exec educa-games-api sh -c "./gradlew build -x test --no-daemon --max-workers=1"
+
+      - name: Format and check code quality
+        run: docker exec educa-games-api sh -c "./gradlew spotlessApply checkstyleMain --no-daemon --max-workers=1"
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
