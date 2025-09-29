@@ -65,7 +65,7 @@ Windows (CMD/PowerShell):
 .\gradlew.bat bootRun
 ```
 
-### 5. Análise de código (Spotless e Checkstyle)
+### 3. Análise de código (Spotless e Checkstyle)
 
 Spotless: Formata automaticamente os arquivos Java de acordo com Google Java Format, remove imports não utilizados, remove whitespace desnecessário e garante linha final.
 
