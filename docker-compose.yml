@@ -17,8 +17,6 @@ services:
     networks:
       - educa-games-network
     restart: unless-stopped
-    volumes:
-      - .:/app
 
   educa-games-postgres:
     image: postgres:15-alpine

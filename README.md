@@ -48,7 +48,7 @@ Este método permite rodar o banco de dados em um container Docker e a API diret
 #### 2.1. Subir apenas o banco de dados (Docker Compose)
 
 ```sh
-docker-compose up postgres
+docker-compose up educa-games-postgres
 ```
 
 #### 2.2. Rodar a API (com banco já rodando)
@@ -80,13 +80,13 @@ A API está configurada para conectar ao banco em localhost:5432 usando variáve
 Documentação da API
 A documentação interativa está disponível via Swagger/OpenAPI em:
 
-- [Swagger UI](http://localhost:8080/swagger-ui.html)  
+- [Swagger UI](http://localhost:8080/swagger-ui.html)
 - [Swagger UI (index)](http://localhost:8080/swagger-ui/index.html)
 
 Basta rodar a API localmente ou via Docker e acessar os links acima no navegador.
 
 Endpoints iniciais
-Exemplo: GET /api/public/hello retorna status da API.
+Exemplo: GET /api/public/healthcheck retorna status da API.
 
 Licença
 MIT
