@@ -42,7 +42,7 @@ spotless {
     java {
         removeUnusedImports()
         importOrder 'java', 'javax', 'org', 'com', ''
-        indentWithSpaces(4)
+        leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
         encoding 'UTF-8'
