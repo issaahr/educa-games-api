@@ -1,16 +1,21 @@
 package com.educagames.api.model;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
-import java.util.Objects;
-
+/**
+ * Entidade base para todas as entidades do sistema.
+ * Fornece campos comuns como ID e timestamps de auditoria.
+ */
 @MappedSuperclass
 public abstract class BaseEntity {
 
