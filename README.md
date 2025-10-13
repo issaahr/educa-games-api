@@ -1,92 +1,220 @@
 # EducaGames API
 
 ![Java](https://img.shields.io/badge/Java-17-orange?logo=java)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-green?logo=springboot)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-green?logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-compose-blue?logo=docker)
+![Security](https://img.shields.io/badge/Security-JWT-red?logo=security)
+![Lombok](https://img.shields.io/badge/Lombok-1.18.34-pink?logo=lombok)
 
-API para plataforma de ensino de programação, construída como projeto final para o Programa +PraTI.
+API REST para plataforma de ensino de programação, construída como projeto final para o Programa +PraTI.
 
 ## Sumário
 
 - [Descrição](#descrição)
 - [Tecnologias](#tecnologias)
+- [Funcionalidades](#funcionalidades)
 - [Configuração de ambiente](#configuração-de-ambiente)
 - [Como rodar](#como-rodar)
 - [Documentação da API](#documentação-da-api)
-- [Endpoints iniciais](#endpoints-iniciais)
+- [Endpoints disponíveis](#endpoints-disponíveis)
+- [Arquitetura](#arquitetura)
+- [Desenvolvimento](#desenvolvimento)
 - [Licença](#licença)
+
+## Descrição
+
+API RESTful desenvolvida em Spring Boot para gerenciar uma plataforma de ensino de programação. Oferece autenticação segura via JWT, gerenciamento de usuários e endpoints para futuras funcionalidades educacionais.
 
 ## Tecnologias
 
-- Java 17 (JDK)
-- Spring Boot 3
-- PostgreSQL
-- Docker & Docker Compose
+- **Java 17** - Linguagem de programação
+- **Spring Boot 3.2.5** - Framework principal
+- **Spring Security** - Autenticação e autorização
+- **Spring Data JPA** - Persistência de dados
+- **PostgreSQL 15** - Banco de dados
+- **JWT** - Autenticação stateless
+- **Docker & Docker Compose** - Containerização
+- **Gradle** - Gerenciamento de dependências
+- **Lombok** - Redução de boilerplate
+- **SpringDoc OpenAPI** - Documentação interativa
+
+## Funcionalidades
+
+- ✅ **Autenticação JWT** - Login/logout seguro com tokens
+- ✅ **Cookies HttpOnly** - Armazenamento seguro de tokens
+- ✅ **Autorização por roles** - Controle de acesso baseado em papéis
+- ✅ **Validação de dados** - Validação automática de DTOs
+- ✅ **Tratamento de erros** - Respostas padronizadas para erros
+- ✅ **Health checks** - Monitoramento da saúde da aplicação
+- ✅ **Documentação interativa** - Swagger/OpenAPI integrado
+- ✅ **Containerização** - Docker multi-stage otimizado
+- ✅ **Configuração por perfis** - Dev/Prod separados
 
 ## Configuração de ambiente
 
-1. Renomeie o arquivo `.env.example` para `.env`.
-2. Preencha suas credenciais (usuário, senha, nome do banco) no arquivo `.env`.
+1. Clone o repositório:
+
+```bash
+git clone <url-do-repositorio>
+cd educa-games-api
+```
+
+2. Configure as variáveis de ambiente:
+
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
+
+3. Configure as variáveis no `.env`:
+
+```env
+# Banco de dados
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=educagames
+DB_USER=postgres
+DB_PASSWORD=senha123
+
+# JWT
+JWT_SECRET=sua-chave-secreta-super-segura-aqui
+JWT_EXPIRATION=86400000
+
+# Spring Profile
+SPRING_PROFILES_ACTIVE=dev
+```
 
 ## Como rodar
 
-Existem duas formas principais de rodar a aplicação:
+### 1. 🐳 Com Docker Compose (Recomendado)
 
-### 1. API com Docker Compose
+Sobe banco + API em containers:
 
-Este método sobe o banco de dados e a API em containers Docker.
-
-```sh
+```bash
 docker-compose up --build
 ```
 
-### 2. API sem Docker Compose
+### 2. 🔧 Desenvolvimento local
 
-Este método permite rodar o banco de dados em um container Docker e a API diretamente na sua máquina.
+#### 2.1. Apenas o banco (Docker)
 
-#### 2.1. Subir apenas o banco de dados (Docker Compose)
-
-```sh
+```bash
 docker-compose up educa-games-postgres
 ```
 
-#### 2.2. Rodar a API (com banco já rodando)
+#### 2.2. API local
 
-Linux/macOS/WSL/Git Bash:
-
-```sh
+```bash
+# Linux/macOS/WSL
 ./gradlew bootRun
-```
 
-Windows (CMD/PowerShell):
-
-```bat
+# Windows
 .\gradlew.bat bootRun
 ```
 
-### 3. Análise de código (Spotless e Checkstyle)
+### 3. 🏗️ Build da aplicação
 
-Spotless: Formata automaticamente os arquivos Java de acordo com Google Java Format, remove imports não utilizados, remove whitespace desnecessário e garante linha final.
+```bash
+# Build JAR
+./gradlew bootJar
 
-Checkstyle: Valida padrões de estilo definidos no projeto.
+# Build Docker
+docker build -t educagames-api .
+```
 
-Observações importantes:
+## Documentação da API
 
-Certifique-se de ter o JDK 17 instalado para rodar a API Java.
+Acesse a documentação interativa:
 
-A API está configurada para conectar ao banco em localhost:5432 usando variáveis do arquivo .env.
+- **Swagger UI**: <http://localhost:8080/swagger-ui.html>
+- **OpenAPI JSON**: <http://localhost:8080/v3/api-docs>
 
-Documentação da API
-A documentação interativa está disponível via Swagger/OpenAPI em:
+## Endpoints disponíveis
 
-- [Swagger UI](http://localhost:8080/swagger-ui.html)
-- [Swagger UI (index)](http://localhost:8080/swagger-ui/index.html)
+### 🔐 Autenticação
 
-Basta rodar a API localmente ou via Docker e acessar os links acima no navegador.
+- `POST /api/auth/login` - Login do usuário
+- `POST /api/auth/logout` - Logout do usuário
+- `GET /api/auth/me` - Dados do usuário autenticado
 
-Endpoints iniciais
-Exemplo: GET /api/public/healthcheck retorna status da API.
+### 🏥 Monitoramento
 
-Licença
-MIT
+- `GET /actuator/health` - Status da aplicação e dependências
+
+### 📚 Documentação
+
+- `GET /swagger-ui.html` - Interface Swagger
+- `GET /v3/api-docs` - Especificação OpenAPI
+
+## Arquitetura
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Spring Boot   │    │   PostgreSQL    │
+│   (Browser)     │◄──►│   API           │◄──►│   Database      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   JWT Tokens    │
+                       │   (HttpOnly)    │
+                       └─────────────────┘
+```
+
+### Camadas da aplicação
+
+- **Controller** - Endpoints REST
+- **Service** - Lógica de negócio
+- **Repository** - Acesso a dados
+- **Entity** - Modelo de dados
+- **DTO** - Transferência de dados
+- **Filter** - Interceptação de requests
+- **Config** - Configurações da aplicação
+
+## Desenvolvimento
+
+### 🛠️ Ferramentas de qualidade
+
+```bash
+# Formatação automática
+./gradlew spotlessApply
+
+# Verificação de estilo
+./gradlew checkstyleMain
+
+# Análise de dependências
+./gradlew dependencyCheckAnalyze
+
+# Testes
+./gradlew test
+```
+
+### 📁 Estrutura do projeto
+
+```
+src/
+├── main/
+│   ├── java/com/educagames/api/
+│   │   ├── config/          # Configurações
+│   │   ├── controller/      # Controllers REST
+│   │   ├── service/         # Lógica de negócio
+│   │   ├── repository/      # Acesso a dados
+│   │   ├── model/           # Entidades e DTOs
+│   │   ├── util/            # Utilitários
+│   │   └── filter/          # Filtros HTTP
+│   └── resources/
+│       ├── application.properties
+│       ├── application-dev.properties
+│       └── application-prod.properties
+└── test/                    # Testes unitários
+```
+
+### 🔧 Configurações por perfil
+
+- **dev**: Desenvolvimento local, logs detalhados, ddl-auto=update
+- **prod**: Produção, logs mínimos, ddl-auto=none, cookies seguros
+
+## Licença
+
+MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.

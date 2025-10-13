@@ -13,4 +13,11 @@ import lombok.*;
 @AllArgsConstructor
 public class LoginResponseDTO {
     private Role role;
+
+    /**
+     * Construtor que aceita role como String e converte para enum.
+     */
+    public LoginResponseDTO(String roleString) {
+        this.role = Role.valueOf(roleString);
+    }
 }
