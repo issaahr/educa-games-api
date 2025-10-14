@@ -1,8 +1,8 @@
 package com.educagames.api.model.dto.shared;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
