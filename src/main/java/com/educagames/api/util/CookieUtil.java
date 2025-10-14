@@ -4,8 +4,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+/**
+ * Utilitário para manipulação de cookies de autenticação.
+ * Centraliza a criação e remoção de cookies HttpOnly, SameSite e Secure.
+ */
 @Component
 public class CookieUtil {
 
@@ -24,61 +29,53 @@ public class CookieUtil {
     private String domain;
 
     /**
-     * Adiciona cookie HttpOnly com token JWT
-     * @param response HttpServletResponse
-     * @param token String
+     * Adiciona o cookie de autenticação HttpOnly à resposta HTTP.
+     *
+     * @param response HttpServletResponse para adicionar o header.
+     * @param token O valor do token JWT a ser armazenado no cookie.
      */
     public void addAuthCookie(HttpServletResponse response, String token) {
-        Cookie cookie = new Cookie(COOKIE_NAME, token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(secure);
-        cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(COOKIE_NAME, token);
+
+        builder.path("/");
+        builder.maxAge(maxAge);
+        builder.httpOnly(true);
+        builder.secure(secure);
+        builder.sameSite(sameSite);
+
         if (domain != null && !domain.isBlank()) {
-            cookie.setDomain(domain);
+            builder.domain(domain);
         }
 
-        // Define SameSite manualmente no header
-        StringBuilder header = new StringBuilder();
-        header.append(COOKIE_NAME).append("=").append(token)
-            .append("; Path=/; Max-Age=").append(maxAge)
-            .append("; HttpOnly; ");
-        if (secure) header.append("Secure; ");
-        if (domain != null && !domain.isBlank()) header.append("Domain=").append(domain).append("; ");
-        header.append("SameSite=").append(sameSite);
-
-        response.addHeader("Set-Cookie", header.toString());
+        response.addHeader("Set-Cookie", builder.build().toString());
     }
 
     /**
-     * Remove cookie de autenticação (logout)
-     * @param response HttpServletResponse
+     * Remove o cookie de autenticação (efetua o logout) ao definir a sua idade máxima como 0.
+     *
+     * @param response HttpServletResponse para adicionar o header de remoção.
      */
     public void removeAuthCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie(COOKIE_NAME, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(secure);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(COOKIE_NAME, "");
+
+        builder.path("/");
+        builder.maxAge(0);
+        builder.httpOnly(true);
+        builder.secure(secure);
+        builder.sameSite(sameSite);
+
         if (domain != null && !domain.isBlank()) {
-            cookie.setDomain(domain);
+            builder.domain(domain);
         }
 
-        // Define header manualmente também para garantir remoção
-        StringBuilder header = new StringBuilder();
-        header.append(COOKIE_NAME).append("=")
-            .append("; Path=/; Max-Age=0; HttpOnly; ");
-        if (secure) header.append("Secure; ");
-        if (domain != null && !domain.isBlank()) header.append("Domain=").append(domain).append("; ");
-        header.append("SameSite=").append(sameSite);
-
-        response.addHeader("Set-Cookie", header.toString());
+        response.addHeader("Set-Cookie", builder.build().toString());
     }
 
     /**
-     * Extrai token do cookie
-     * @param cookies Cookie[]
-     * @return String
+     * Extrai o valor do token do array de cookies da requisição.
+     *
+     * @param cookies O array de cookies da HttpServletRequest.
+     * @return O valor do token como String, ou null se não for encontrado.
      */
     public String getTokenFromCookie(Cookie[] cookies) {
         if (cookies == null) return null;

@@ -3,6 +3,8 @@ package com.educagames.api.config;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -16,10 +18,11 @@ import io.github.cdimascio.dotenv.Dotenv;
  */
 public class DotenvConfig implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
+    private static final Logger logger = LoggerFactory.getLogger(DotenvConfig.class);
+
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         try {
-            // Carrega o arquivo .env (ignora se não existir em produção)
             Dotenv dotenv = Dotenv.configure()
                 .ignoreIfMissing()
                 .load();
@@ -27,19 +30,16 @@ public class DotenvConfig implements ApplicationContextInitializer<ConfigurableA
             ConfigurableEnvironment environment = applicationContext.getEnvironment();
             Map<String, Object> dotenvProperties = new HashMap<>();
 
-            // Adiciona todas as entradas do .env ao mapa
-            dotenv.entries().forEach(entry -> {
-                dotenvProperties.put(entry.getKey(), entry.getValue());
-            });
+            dotenv.entries().forEach(entry ->
+                dotenvProperties.put(entry.getKey(), entry.getValue())
+            );
 
-            // Adiciona as propriedades do .env ao ambiente do Spring com alta prioridade
             environment.getPropertySources().addFirst(
                 new MapPropertySource("dotenvProperties", dotenvProperties)
             );
 
         } catch (Exception e) {
-            System.err.println("Aviso: Não foi possível carregar o arquivo .env: " + e.getMessage());
-            System.err.println("Certifique-se de que as variáveis de ambiente estejam configuradas.");
+            logger.warn("Não foi possível carregar ou processar o arquivo .env. Certifique-se de que as variáveis de ambiente estejam configuradas. Erro: {}", e.getMessage());
         }
     }
 }
