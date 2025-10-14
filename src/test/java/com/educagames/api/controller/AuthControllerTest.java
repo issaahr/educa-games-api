@@ -1,18 +1,14 @@
 package com.educagames.api.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-
+import com.educagames.api.exceptions.UnauthorizedException;
+import com.educagames.api.model.dto.auth.AuthResult;
+import com.educagames.api.model.dto.auth.LoginRequestDTO;
+import com.educagames.api.model.dto.auth.LoginResponseDTO;
+import com.educagames.api.model.dto.auth.UserProfileDTO;
+import com.educagames.api.model.dto.shared.SuccessResponse;
+import com.educagames.api.model.enums.Role;
+import com.educagames.api.service.AuthService;
+import com.educagames.api.util.CookieUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,15 +24,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.educagames.api.exceptions.UnauthorizedException;
-import com.educagames.api.model.dto.auth.AuthResult;
-import com.educagames.api.model.dto.auth.LoginRequestDTO;
-import com.educagames.api.model.dto.auth.LoginResponseDTO;
-import com.educagames.api.model.dto.auth.UserProfileDTO;
-import com.educagames.api.model.dto.shared.SuccessResponse;
-import com.educagames.api.model.enums.Role;
-import com.educagames.api.service.AuthService;
-import com.educagames.api.util.CookieUtil;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -86,8 +79,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Deve retornar 200 OK ao realizar logout")
-    void whenLogout_shouldReturnOk() {
+    @DisplayName("Deve retornar 204 No Content ao realizar logout")
+    void whenLogout_shouldReturnNoContent() {
         // Arrange
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
@@ -96,10 +89,8 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Logout realizado com sucesso", response.getBody().getMessage());
-        assertNull(response.getBody().getData());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
 
         verify(cookieUtil, times(1)).removeAuthCookie(httpServletResponse);
     }
@@ -139,17 +130,13 @@ class AuthControllerTest {
     @DisplayName("Deve lançar UnauthorizedException ao chamar /me sem usuário autenticado")
     void whenUnauthenticatedUserCallsMe_shouldThrowUnauthorizedException() {
         // Arrange
-        // Garante que o contexto de segurança está limpo (nenhum usuário autenticado)
         SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
 
         // Act & Assert
-        // Verifica se a chamada ao método 'me' lança a exceção esperada.
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authController.me());
 
-        // Verifica a mensagem da exceção
         assertEquals("Usuário não autenticado", exception.getMessage());
 
-        // Garante que o serviço para buscar o perfil NUNCA foi chamado
         verify(authService, never()).getUserProfile(anyLong());
     }
 }
