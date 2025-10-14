@@ -24,7 +24,7 @@ public class DatabaseSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         String email = "professor@educagames.com";
-        // TODO: mudar o a forma de cadastrar a senha quando o smtp for implementado
+        // TODO: mudar a forma de cadastrar a senha quando o smtp for implementado
         if (userRepository.findByEmail(email).isEmpty()) {
             User professor = User.builder()
                 .name("Professor Inicial")
