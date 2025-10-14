@@ -1,4 +1,3 @@
-
 package com.educagames.api.config;
 
 import org.springframework.context.annotation.Bean;
