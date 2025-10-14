@@ -1,22 +1,19 @@
 package com.educagames.api.util;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Date;
-
-import javax.crypto.SecretKey;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import com.educagames.api.exceptions.JwtExpiredException;
 import com.educagames.api.exceptions.JwtInvalidException;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
 
 /**
  * Utilitário para geração, validação e extração de dados de tokens JWT.
@@ -58,7 +55,7 @@ public class JwtUtil {
      *
      * @param token token JWT a ser validado
      * @throws JwtExpiredException se o token estiver expirado
-     * @throws JwtInvalidException se o token for malformed ou tiver uma assinatura inválida
+     * @throws JwtInvalidException se o token for malformado ou tiver uma assinatura inválida
      */
     public void isValid(String token) {
         try {
@@ -75,12 +72,16 @@ public class JwtUtil {
      *
      * @param token token JWT válido
      * @return ID do usuário extraído do token
-     * @throws NumberFormatException se o subject não for um número válido
+     * @throws JwtInvalidException se o "subject" do token não for um número válido.
      */
     public Long getUserId(String token) {
         String subject = Jwts.parser().verifyWith(getKey()).build()
             .parseSignedClaims(token).getPayload().getSubject();
-        return Long.parseLong(subject);
+        try {
+            return Long.parseLong(subject);
+        } catch (NumberFormatException e) {
+            throw new JwtInvalidException("Subject do token JWT não é um número válido");
+        }
     }
 
     /**
