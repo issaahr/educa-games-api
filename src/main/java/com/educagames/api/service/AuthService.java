@@ -3,7 +3,6 @@ package com.educagames.api.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.educagames.api.exceptions.BadRequestException;
 import com.educagames.api.exceptions.UnauthorizedException;
 import com.educagames.api.model.dto.auth.AuthResult;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
@@ -50,14 +49,14 @@ public class AuthService {
      *
      * @param request DTO contendo email e senha do usuário
      * @return AuthResult contendo o token JWT e o papel do usuário
-     * @throws BadRequestException se as credenciais forem inválidas
+     * @throws UnauthorizedException se as credenciais forem inválidas
      */
     public AuthResult login(LoginRequestDTO request) {
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new BadRequestException("Email ou senha incorretos"));
+            .orElseThrow(() -> new UnauthorizedException("Email ou senha incorretos"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadRequestException("Email ou senha incorretos");
+            throw new UnauthorizedException("Email ou senha incorretos");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getRole().toString());

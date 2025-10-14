@@ -52,8 +52,12 @@ public class JwtUtil {
     /**
      * Valida se um token JWT é válido e não expirado.
      *
+     * O método não retorna nada. Se o token for inválido ou expirado,
+     * uma exceção específica (JwtExpiredException ou JwtInvalidException) será lançada.
+     *
      * @param token token JWT a ser validado
-     * @return true se o token for válido, false caso contrário
+     * @throws JwtExpiredException se o token estiver expirado
+     * @throws JwtInvalidException se o token for malformado ou tiver uma assinatura inválida
      */
     public void isValid(String token) {
         try {

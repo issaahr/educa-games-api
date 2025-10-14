@@ -44,9 +44,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         String message;
         if (jwtException instanceof JwtExpiredException) {
-            message = "Token de de autenticação expirado";
+            message = "Token de autenticação expirado";
         } else if (jwtException instanceof JwtInvalidException || jwtException instanceof MalformedJwtException) {
-            message = "Token de de autenticação inválido";
+            message = "Token de autenticação inválido";
         } else {
             message = "Token de autenticação necessário";
         }

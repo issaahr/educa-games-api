@@ -47,10 +47,9 @@ public class ResponseUtils {
     /**
      * Retorna uma resposta HTTP 204 No Content sem corpo.
      *
-     * @param message mensagem descritiva (opcional, não enviada no corpo)
      * @return ResponseEntity com status 204 No Content
      */
-    public static ResponseEntity<SuccessResponse<Void>> noContent(String message) {
+    public static ResponseEntity<SuccessResponse<Void>> noContent() {
         return ResponseEntity.noContent().build();
     }
 }

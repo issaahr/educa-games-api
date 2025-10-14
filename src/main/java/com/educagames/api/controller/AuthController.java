@@ -44,26 +44,11 @@ public class AuthController {
     private final AuthService authService;
     private final CookieUtil cookieUtil;
 
-    /**
-     * Construtor do AuthController.
-     *
-     * @param authService serviço de autenticação
-     * @param cookieUtil utilitário para manipulação de cookies
-     */
     public AuthController(AuthService authService, CookieUtil cookieUtil) {
         this.authService = authService;
         this.cookieUtil = cookieUtil;
     }
 
-    /**
-     * Realiza o login do usuário.
-     *
-     * Valida as credenciais e retorna um token JWT armazenado em cookie HttpOnly.
-     *
-     * @param request dados de login (email e senha)
-     * @param response resposta HTTP para definir o cookie
-     * @return resposta com dados do usuário e token em cookie
-     */
     @Operation(summary = "Autentica um usuário", description = "Valida as credenciais do usuário e retorna a role. O token JWT é enviado em um cookie HttpOnly seguro.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Login bem-sucedido",
@@ -77,7 +62,7 @@ public class AuthController {
         @ApiResponse(responseCode = "401", description = "Credenciais inválidas",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Token de autenticação inválido\", \"errors\": null}")))
+                examples = @ExampleObject(value = "{\"message\": \"Email ou senha incorretos\", \"errors\": null}")))
     })
     @PostMapping("/login")
     public ResponseEntity<SuccessResponse<LoginResponseDTO>> login(
@@ -85,46 +70,21 @@ public class AuthController {
         HttpServletResponse response
     ) {
         AuthResult authResult = authService.login(request);
-
         cookieUtil.addAuthCookie(response, authResult.token());
-
         LoginResponseDTO loginResponse = new LoginResponseDTO(authResult.role());
-
         return ResponseUtils.ok(loginResponse, "Login realizado com sucesso");
     }
 
-    /**
-     * Realiza o logout do usuário.
-     *
-     * Remove o cookie de autenticação do navegador.
-     *
-     * @param response resposta HTTP para remover o cookie
-     * @return confirmação de logout
-     */
     @Operation(summary = "Realiza o logout do usuário", description = "Invalida o cookie de autenticação do usuário.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Logout bem-sucedido",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = SuccessResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Logout realizado com sucesso\", \"data\": null}")))
+        @ApiResponse(responseCode = "204", description = "Logout bem-sucedido. Nenhuma resposta no corpo.")
     })
     @PostMapping("/logout")
     public ResponseEntity<SuccessResponse<Void>> logout(HttpServletResponse response) {
-        // Usa CookieUtil para remover cookie
         cookieUtil.removeAuthCookie(response);
-
-        return ResponseUtils.ok(null, "Logout realizado com sucesso");
+        return ResponseUtils.noContent();
     }
 
-    /**
-     * Retorna dados do perfil do usuário autenticado.
-     *
-     * Busca informações para personalização da interface.
-     * O role é obtido no login para decisão de rota.
-     *
-     * @return dados do perfil do usuário (ID e nome)
-     * @throws UnauthorizedException se o usuário não estiver autenticado ou for inativo
-     */
     @Operation(summary = "Obtém dados do usuário autenticado", description = "Retorna informações do perfil do usuário logado, como ID e nome.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Dados do usuário obtidos com sucesso",
@@ -138,16 +98,12 @@ public class AuthController {
     })
     @GetMapping("/me")
     public ResponseEntity<SuccessResponse<UserProfileDTO>> me() {
-        var auth = org.springframework.security.core.context.SecurityContextHolder
-            .getContext().getAuthentication();
-
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new UnauthorizedException("Usuário não autenticado");
         }
-
         Long userId = (Long) auth.getPrincipal();
         UserProfileDTO userProfile = authService.getUserProfile(userId);
-
         return ResponseUtils.ok(userProfile, "Dados do usuário obtidos com sucesso");
     }
 }
