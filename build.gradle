@@ -4,6 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.4'
     id 'checkstyle'
     id 'com.diffplug.spotless' version '8.0.0'
+    id 'org.owasp.dependencycheck' version '10.0.3'
 }
 
 group = 'com.educagames'
@@ -20,20 +21,40 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
+    // Spring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    testCompileOnly 'org.projectlombok:lombok:1.18.34'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    // Outros
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
+
+    // Testes
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    // testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
+
+tasks.named('test', Test) {
     useJUnitPlatform()
 }
 
@@ -41,7 +62,7 @@ tasks.named('test') {
 spotless {
     java {
         removeUnusedImports()
-        importOrder 'java', 'javax', 'org', 'com', ''
+        importOrder 'java', 'javax', 'jakarta', 'org', 'com', ''
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
@@ -62,6 +83,6 @@ checkstyle {
 }
 
 // Compila com UTF-8 para garantir consistência entre Windows e Linux
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

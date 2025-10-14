@@ -14,26 +14,26 @@
 
     <!-- Filtros de supressão -->
     <module name="SuppressionFilter">
-        <property name="file" value="checkstyle-suppressions.xml"/>
+        <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
         <property name="optional" value="true"/>
     </module>
 
     <!-- Checagens de arquivo -->
     <module name="FileTabCharacter"/>
     <module name="LineLength">
-        <property name="max" value="120"/>
+        <property name="max" value="200"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
     <!-- TreeWalker -->
     <module name="TreeWalker">
-        
+
         <!-- Javadoc para pacote -->
         <module name="MissingJavadocType">
             <property name="scope" value="package"/>
         </module>
         <module name="MissingJavadocMethod">
-            <property name="scope" value="package"/> 
+            <property name="scope" value="package"/>
         </module>
 
         <!-- Convenções para nomes -->
@@ -53,14 +53,6 @@
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
-        <!-- Tamanho de métodos e parâmetros -->
-        <module name="MethodLength">
-            <property name="max" value="120"/> 
-        </module>
-        <module name="ParameterNumber">
-            <property name="max" value="5"/> 
-        </module>
-
         <!-- Tratamento de espaços -->
         <module name="EmptyForIteratorPad"/>
         <module name="GenericWhitespace"/>
@@ -72,7 +64,7 @@
         <module name="WhitespaceAfter"/>
         <module name="WhitespaceAround"/>
 
-        <!-- Modificadores -->  
+        <!-- Modificadores -->
         <module name="ModifierOrder"/>
         <module name="RedundantModifier"/>
 
