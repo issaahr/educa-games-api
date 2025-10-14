@@ -1,12 +1,10 @@
 package com.educagames.api.model.entity;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.*;
-
 import com.educagames.api.model.enums.Role;
-
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -30,7 +28,7 @@ public class User extends BaseEntity {
     private Role role;
 
     @Column(nullable=false)
-    private Boolean active;
+    private boolean active;
 
     private LocalDate birthDate;
 }

@@ -1,8 +1,5 @@
 package com.educagames.api.service;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.educagames.api.exceptions.UnauthorizedException;
 import com.educagames.api.model.dto.auth.AuthResult;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
@@ -10,6 +7,8 @@ import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.JwtUtil;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 /**
  * Serviço responsável pela autenticação de usuários.
@@ -77,7 +76,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
 
-        if (!user.getActive()) {
+        if (!user.isActive()) {
             throw new UnauthorizedException("Usuário inativo");
         }
 
