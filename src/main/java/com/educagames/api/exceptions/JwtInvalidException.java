@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class JwtInvalidException extends BaseException {
 
     /**
-     * Cria uma nova instância de UnauthorizedException com a mensagem de erro especificada.
+     * Cria uma nova instância de JwtInvalidException com a mensagem de erro especificada.
      *
      * @param message a mensagem detalhando a razão da exceção
      */

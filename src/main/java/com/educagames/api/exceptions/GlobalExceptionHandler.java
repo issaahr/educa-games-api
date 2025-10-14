@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
             .status(status)
-            .body(new ErrorResponse(ex.getMessage ()));
+            .body(new ErrorResponse(ex.getMessage()));
     }
 
     /**
