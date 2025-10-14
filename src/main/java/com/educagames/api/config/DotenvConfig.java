@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.lang.NonNull;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -21,7 +22,7 @@ public class DotenvConfig implements ApplicationContextInitializer<ConfigurableA
     private static final Logger logger = LoggerFactory.getLogger(DotenvConfig.class);
 
     @Override
-    public void initialize(ConfigurableApplicationContext applicationContext) {
+    public void initialize(@NonNull ConfigurableApplicationContext applicationContext) {
         try {
             Dotenv dotenv = Dotenv.configure()
                 .ignoreIfMissing()
