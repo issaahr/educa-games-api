@@ -13,7 +13,7 @@ import com.educagames.api.util.JwtUtil;
 
 /**
  * Serviço responsável pela autenticação de usuários.
- *
+ * <p>
  * Gerencia operações de login, validação de credenciais e geração de tokens JWT.
  * Utiliza BCrypt para verificação segura de senhas e JWT para autenticação stateless.
  */
@@ -43,7 +43,7 @@ public class AuthService {
 
     /**
      * Realiza o login do usuário com email e senha.
-     *
+     * <p>
      * Valida as credenciais fornecidas contra o banco de dados e retorna
      * um token JWT válido junto com o papel do usuário.
      *
@@ -65,7 +65,7 @@ public class AuthService {
 
     /**
      * Obtém o perfil completo do usuário autenticado.
-     *
+     * <p>
      * Busca os dados atualizados do usuário no banco de dados,
      * garantindo que as informações retornadas estejam sempre atualizadas.
      *

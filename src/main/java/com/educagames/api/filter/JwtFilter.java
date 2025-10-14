@@ -23,6 +23,7 @@ import com.educagames.api.util.JwtUtil;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final String BEARER_PREFIX = "Bearer ";
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
 
@@ -40,8 +41,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = null;
         String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            token = authHeader.substring(BEARER_PREFIX.length());
         }
         if (token == null) {
             token = cookieUtil.getTokenFromCookie(request.getCookies());

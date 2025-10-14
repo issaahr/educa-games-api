@@ -7,7 +7,7 @@ import lombok.Builder;
 
 /**
  * DTO para dados do perfil do usuário autenticado.
- *
+ * <p>
  * Contém informações para personalização da interface.
  * O role é obtido no login para decisão de rota.
  */

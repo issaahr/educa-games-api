@@ -16,7 +16,7 @@ import com.educagames.api.model.dto.shared.ErrorResponse;
 
 /**
  * Handler global de exceções da aplicação.
- *
+ * <p>
  * Captura exceções lançadas pelos controllers e retorna
  * respostas HTTP padronizadas com mensagens apropriadas.
  */
@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Captura todas as exceções que estendem BaseException.
-     *
+     * <p>
      * O status HTTP é obtido da anotação @ResponseStatus da exceção,
      * ou 500 caso não exista.
      *
@@ -50,13 +50,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Captura erros de validação do Spring (@Valid nos DTOs).
-     *
+     * <p>
      * Quando um DTO recebe campos inválidos (ex.: @NotBlank, @Email), o Spring lança
      * {@link MethodArgumentNotValidException}. Esse método intercepta essa exceção
      * e retorna um {@link ErrorResponse} contendo:
      * - message: descrição geral do erro ("Erro de validação nos campos")
      * - errors: lista de strings detalhando cada campo inválido e a mensagem associada
-     *
+     * <p>
      * Retorna HTTP 400 (Bad Request).
      *
      * @param ex exceção lançada pelo Spring quando os campos do DTO não passam na validação
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Captura quaisquer exceções não tratadas (fallback).
-     *
+     * <p>
      * Retorna HTTP 500 com mensagem genérica.
      *
      * @param ex a exceção lançada

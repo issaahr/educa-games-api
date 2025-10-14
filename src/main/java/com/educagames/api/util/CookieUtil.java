@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class CookieUtil {
 
     private static final String COOKIE_NAME = "auth_token";
+    private static final String EMPTY_VALUE = "";
 
     @Value("${cookie.max-age}")
     private Integer maxAge;
@@ -56,7 +57,7 @@ public class CookieUtil {
      * @param response HttpServletResponse para adicionar o header de remoção.
      */
     public void removeAuthCookie(HttpServletResponse response) {
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(COOKIE_NAME, "");
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(COOKIE_NAME, EMPTY_VALUE);
 
         builder.path("/");
         builder.maxAge(0);

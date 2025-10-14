@@ -6,10 +6,10 @@ import com.educagames.api.model.dto.shared.SuccessResponse;
 
 /**
  * Classe utilitária para padronizar respostas de sucesso da API.
- *
+ * <p>
  * Fornece métodos estáticos para criar ResponseEntity com diferentes
  * status HTTP, encapsulando a mensagem e os dados em {@link SuccessResponse}.
- *
+ * <p>
  * Exemplo de uso:
  * <pre>
  * return ResponseUtils.ok(userData, "Login realizado com sucesso");

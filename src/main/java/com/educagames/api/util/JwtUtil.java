@@ -1,6 +1,7 @@
 package com.educagames.api.util;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -19,7 +20,7 @@ import io.jsonwebtoken.security.SignatureException;
 
 /**
  * Utilitário para geração, validação e extração de dados de tokens JWT.
- *
+ * <p>
  * Utiliza HMAC-SHA256 para assinatura dos tokens e permite configuração
  * de chave secreta e tempo de expiração via propriedades da aplicação.
  */
@@ -44,20 +45,20 @@ public class JwtUtil {
             .subject(userId.toString())
             .claim("role", role)
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .expiration(Date.from(Instant.now().plusMillis(expiration)))
             .signWith(getKey())
             .compact();
     }
 
     /**
      * Valida se um token JWT é válido e não expirado.
-     *
+     * <p>
      * O método não retorna nada. Se o token for inválido ou expirado,
      * uma exceção específica (JwtExpiredException ou JwtInvalidException) será lançada.
      *
      * @param token token JWT a ser validado
      * @throws JwtExpiredException se o token estiver expirado
-     * @throws JwtInvalidException se o token for malformado ou tiver uma assinatura inválida
+     * @throws JwtInvalidException se o token for malformed ou tiver uma assinatura inválida
      */
     public void isValid(String token) {
         try {

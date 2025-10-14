@@ -2,7 +2,7 @@ package com.educagames.api.exceptions;
 
 /**
  * Exceção base para todas as exceções customizadas da aplicação.
- *
+ * <p>
  * Todas as exceções que estenderem esta classe poderão ser
  * capturadas pelo GlobalExceptionHandler e mapeadas para
  * respostas HTTP adequadas.

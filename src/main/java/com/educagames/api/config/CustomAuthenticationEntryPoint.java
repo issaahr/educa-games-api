@@ -2,7 +2,6 @@ package com.educagames.api.config;
 
 import java.io.IOException;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -15,11 +14,9 @@ import com.educagames.api.exceptions.JwtInvalidException;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jsonwebtoken.MalformedJwtException;
-
 /**
  * Manipula erros de autenticação JWT, retornando respostas HTTP apropriadas.
- *
+ * <p>
  * Este componente intercepta requisições não autenticadas ou com tokens inválidos
  * e retorna uma resposta JSON padronizada com código 401.
  */
@@ -33,19 +30,18 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         HttpServletRequest request,
         HttpServletResponse response,
         AuthenticationException authException
-    ) throws IOException, ServletException {
+    ) throws IOException {
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        // Verifica se há uma exceção JWT no request (definida pelo JwtFilter)
         Exception jwtException = (Exception) request.getAttribute("exception");
 
         String message;
         if (jwtException instanceof JwtExpiredException) {
             message = "Token de autenticação expirado";
-        } else if (jwtException instanceof JwtInvalidException || jwtException instanceof MalformedJwtException) {
+        } else if (jwtException instanceof JwtInvalidException) {
             message = "Token de autenticação inválido";
         } else {
             message = "Token de autenticação necessário";
