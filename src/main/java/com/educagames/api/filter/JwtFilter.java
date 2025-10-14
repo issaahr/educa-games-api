@@ -38,7 +38,6 @@ public class JwtFilter extends OncePerRequestFilter {
         @NonNull FilterChain chain
     ) throws ServletException, IOException {
 
-        // Extrai token de Authorization: Bearer <token> ou do cookie
         String token = null;
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -55,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 Long userId = jwtUtil.getUserId(token);
                 String role = jwtUtil.getRole(token);
 
-                var auth = new UsernamePasswordAuthenticationToken(
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                     userId,
                     null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + role))
@@ -64,7 +63,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (JwtExpiredException | JwtInvalidException e) {
-                // Adiciona exceção ao request para o AuthenticationEntryPoint
                 request.setAttribute("exception", e);
                 SecurityContextHolder.clearContext();
             }

@@ -59,16 +59,13 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 200 OK e a role do usuário ao logar com credenciais válidas")
     void whenLoginWithValidCredentials_shouldReturnOkAndRole() {
-        // Arrange
         String fakeToken = "fake-jwt-token";
         AuthResult authResult = new AuthResult(fakeToken, Role.INSTRUCTOR.name());
         when(authService.login(any(LoginRequestDTO.class))).thenReturn(authResult);
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
-        // Act
         ResponseEntity<SuccessResponse<LoginResponseDTO>> response = authController.login(loginRequest, httpServletResponse);
 
-        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -82,13 +79,10 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 204 No Content ao realizar logout")
     void whenLogout_shouldReturnNoContent() {
-        // Arrange
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
-        // Act
         ResponseEntity<SuccessResponse<Void>> response = authController.logout(httpServletResponse);
 
-        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
@@ -99,7 +93,6 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 200 OK e os dados do perfil ao chamar /me com usuário autenticado")
     void whenAuthenticatedUserCallsMe_shouldReturnUserProfile() {
-        // Arrange
         Long userId = 1L;
         UserProfileDTO userProfile = new UserProfileDTO(userId, "Test User");
 
@@ -108,10 +101,8 @@ class AuthControllerTest {
 
         when(authService.getUserProfile(userId)).thenReturn(userProfile);
 
-        // Act
         ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me();
 
-        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
@@ -130,10 +121,8 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao chamar /me sem usuário autenticado")
     void whenUnauthenticatedUserCallsMe_shouldThrowUnauthorizedException() {
-        // Arrange
         SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
 
-        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authController.me());
 
         assertEquals("Usuário não autenticado", exception.getMessage());

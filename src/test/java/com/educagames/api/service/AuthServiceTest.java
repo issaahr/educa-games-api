@@ -1,14 +1,9 @@
 package com.educagames.api.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
@@ -64,16 +59,13 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve retornar AuthResult ao logar com credenciais válidas")
     void whenLoginWithValidCredentials_shouldReturnAuthResult() {
-        // Arrange
         String fakeToken = "fake-jwt-token";
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(true);
         when(jwtUtil.generateToken(testUser.getId(), testUser.getRole().toString())).thenReturn(fakeToken);
 
-        // Act
         AuthResult result = authService.login(loginRequest);
 
-        // Assert
         assertNotNull(result);
         assertEquals(fakeToken, result.token());
         assertEquals(Role.INSTRUCTOR.name(), result.role());
@@ -86,10 +78,8 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao logar com email inexistente")
     void whenLoginWithNonExistentEmail_shouldThrowUnauthorizedException() {
-        // Arrange
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
 
-        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest));
 
         assertEquals("Email ou senha incorretos", exception.getMessage());
@@ -101,11 +91,9 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao logar com senha incorreta")
     void whenLoginWithIncorrectPassword_shouldThrowUnauthorizedException() {
-        // Arrange
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(false);
 
-        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest));
 
         assertEquals("Email ou senha incorretos", exception.getMessage());
@@ -116,14 +104,11 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve retornar UserProfileDTO para um usuário existente e ativo")
     void whenGetUserProfileForActiveUser_shouldReturnUserProfileDTO() {
-        // Arrange
         Long userId = 1L;
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
 
-        // Act
         UserProfileDTO userProfile = authService.getUserProfile(userId);
 
-        // Assert
         assertNotNull(userProfile);
         assertEquals(testUser.getId(), userProfile.userId());
         assertEquals(testUser.getName(), userProfile.name());
@@ -134,11 +119,9 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao buscar perfil de usuário inexistente")
     void whenGetUserProfileForNonExistentUser_shouldThrowUnauthorizedException() {
-        // Arrange
         Long userId = 99L;
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.getUserProfile(userId));
 
         assertEquals("Usuário não encontrado", exception.getMessage());
@@ -147,7 +130,6 @@ class AuthServiceTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao buscar perfil de usuário inativo")
     void whenGetUserProfileForInactiveUser_shouldThrowUnauthorizedException() {
-        // Arrange
         Long userId = 2L;
         User inactiveUser = new User();
         inactiveUser.setId(userId);
@@ -155,7 +137,6 @@ class AuthServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(inactiveUser));
 
-        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.getUserProfile(userId));
 
         assertEquals("Usuário inativo", exception.getMessage());

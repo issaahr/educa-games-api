@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +34,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Controller responsável pelos endpoints de autenticação.
- *
  * Gerencia login, logout e informações do usuário autenticado.
  * Utiliza cookies HttpOnly para armazenamento seguro de tokens JWT.
  */
@@ -98,7 +99,7 @@ public class AuthController {
     })
     @GetMapping("/me")
     public ResponseEntity<SuccessResponse<UserProfileDTO>> me() {
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new UnauthorizedException("Usuário não autenticado");
         }

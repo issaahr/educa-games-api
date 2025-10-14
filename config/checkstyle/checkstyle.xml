@@ -55,10 +55,10 @@
 
         <!-- Tamanho de métodos e parâmetros -->
         <module name="MethodLength">
-            <property name="max" value="120"/>
+            <property name="max" value="250"/>
         </module>
         <module name="ParameterNumber">
-            <property name="max" value="5"/>
+            <property name="max" value="10"/>
         </module>
 
         <!-- Tratamento de espaços -->

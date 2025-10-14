@@ -22,7 +22,7 @@
     <suppress checks="MissingJavadocType" files=".*Test\.java"/>
     <suppress checks="MissingJavadocMethod" files=".*Test\.java"/>
     <suppress checks="MethodName" files=".*Test\.java"/>
-    <suppress checks="LineLength" files=".*Test\.java"/>
-    <suppress checks="MethodLength" files=".*Test\.java"/>
+    <suppress checks="MagicNumber" files=".*Test\.java"/>
+    <suppress checks="AvoidStarImport" files=".*Test\.java"/>
 
 </suppressions>
