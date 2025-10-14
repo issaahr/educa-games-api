@@ -69,7 +69,7 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "Login bem-sucedido",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = SuccessResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Login realizado com sucesso\", \"data\": {\"role\": \"ADMIN\"}}"))),
+                examples = @ExampleObject(value = "{\"message\": \"Login realizado com sucesso\", \"data\": {\"role\": \"INSTRUCTOR\"}}"))),
         @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),

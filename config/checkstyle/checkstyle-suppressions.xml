@@ -12,10 +12,17 @@
     <suppress checks="MissingJavadocType" files=".*Request\.java"/>
     <suppress checks="MissingJavadocType" files=".*Response\.java"/>
     <suppress checks="MissingJavadocType" files=".*Exception\.java"/>
-    
+
     <!-- Não exigir Javadoc para métodos simples -->
     <suppress checks="MissingJavadocMethod" files=".*Entity\.java"/>
     <suppress checks="MissingJavadocMethod" files=".*Request\.java"/>
     <suppress checks="MissingJavadocMethod" files=".*Response\.java"/>
-    
+
+    <!-- Suprimir regras comuns para classes de teste (arquivos terminados em Test.java) -->
+    <suppress checks="MissingJavadocType" files=".*Test\.java"/>
+    <suppress checks="MissingJavadocMethod" files=".*Test\.java"/>
+    <suppress checks="MethodName" files=".*Test\.java"/>
+    <suppress checks="LineLength" files=".*Test\.java"/>
+    <suppress checks="MethodLength" files=".*Test\.java"/>
+
 </suppressions>
