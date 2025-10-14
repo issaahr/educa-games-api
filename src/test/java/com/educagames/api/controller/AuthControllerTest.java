@@ -1,14 +1,12 @@
 package com.educagames.api.controller;
 
-import com.educagames.api.exceptions.UnauthorizedException;
-import com.educagames.api.model.dto.auth.AuthResult;
-import com.educagames.api.model.dto.auth.LoginRequestDTO;
-import com.educagames.api.model.dto.auth.LoginResponseDTO;
-import com.educagames.api.model.dto.auth.UserProfileDTO;
-import com.educagames.api.model.dto.shared.SuccessResponse;
-import com.educagames.api.model.enums.Role;
-import com.educagames.api.service.AuthService;
-import com.educagames.api.util.CookieUtil;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+
+import java.util.Collections;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,12 +22,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import com.educagames.api.exceptions.UnauthorizedException;
+import com.educagames.api.model.dto.auth.AuthResult;
+import com.educagames.api.model.dto.auth.LoginRequestDTO;
+import com.educagames.api.model.dto.auth.LoginResponseDTO;
+import com.educagames.api.model.dto.auth.UserProfileDTO;
+import com.educagames.api.model.dto.shared.SuccessResponse;
+import com.educagames.api.model.enums.Role;
+import com.educagames.api.service.AuthService;
+import com.educagames.api.util.CookieUtil;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
