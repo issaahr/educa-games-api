@@ -1,5 +1,6 @@
 package com.educagames.api.model.dto.shared;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -15,14 +16,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ErrorResponse {
 
-    /**
-     * Mensagem principal do erro
-     */
+    @Schema(description = "Mensagem principal e resumida do erro.")
     private String message;
 
-    /**
-     * Lista de erros detalhados (opcional)
-     */
+    @Schema(description = "Lista de erros detalhados, preenchida principalmente para erros de validação de campos. Para outros erros, este campo é nulo.", nullable = true)
     private List<String> errors;
 
     /**

@@ -2,6 +2,7 @@ package com.educagames.api.model.dto.auth;
 
 import com.educagames.api.model.enums.Role;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 /**
@@ -12,6 +13,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponseDTO {
+
+    @Schema(description = "Perfil do usuário no sistema", example = "ADMIN")
     private Role role;
 
     /**

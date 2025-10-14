@@ -8,8 +8,14 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.educagames.api.exceptions.JwtExpiredException;
+import com.educagames.api.exceptions.JwtInvalidException;
+
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 
 /**
  * Utilitário para geração, validação e extração de dados de tokens JWT.
@@ -49,12 +55,13 @@ public class JwtUtil {
      * @param token token JWT a ser validado
      * @return true se o token for válido, false caso contrário
      */
-    public boolean isValid(String token) {
+    public void isValid(String token) {
         try {
             Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
+        } catch (ExpiredJwtException e) {
+            throw new JwtExpiredException("Token de autenticação expirado");
+        } catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
+            throw new JwtInvalidException("Token de autenticação inválido");
         }
     }
 
