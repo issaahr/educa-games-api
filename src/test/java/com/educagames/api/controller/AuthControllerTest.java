@@ -1,9 +1,16 @@
 package com.educagames.api.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
@@ -23,14 +30,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.educagames.api.exceptions.UnauthorizedException;
-import com.educagames.api.model.dto.auth.AuthResult;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
-import com.educagames.api.model.dto.auth.LoginResponseDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.service.AuthService;
 import com.educagames.api.util.CookieUtil;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -57,32 +64,35 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Deve retornar 200 OK e a role do usuário ao logar com credenciais válidas")
-    void whenLoginWithValidCredentials_shouldReturnOkAndRole() {
-        String fakeToken = "fake-jwt-token";
-        AuthResult authResult = new AuthResult(fakeToken, Role.INSTRUCTOR.name());
-        when(authService.login(any(LoginRequestDTO.class))).thenReturn(authResult);
+    @DisplayName("Deve retornar 204 No Content ao logar com credenciais válidas")
+    void whenLoginWithValidCredentials_shouldReturnNoContent() {
+        // Arrange
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        // Como o método authService.login agora é void, usamos doNothing()
+        doNothing().when(authService).login(any(LoginRequestDTO.class), any(HttpServletResponse.class));
 
-        ResponseEntity<SuccessResponse<LoginResponseDTO>> response = authController.login(loginRequest, httpServletResponse);
+        // Act
+        ResponseEntity<Void> response = authController.login(loginRequest, httpServletResponse);
 
+        // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Login realizado com sucesso", response.getBody().getMessage());
-        assertEquals(Role.INSTRUCTOR, response.getBody().getData().getRole());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
 
-        verify(authService, times(1)).login(loginRequest);
-        verify(cookieUtil, times(1)).addAuthCookie(httpServletResponse, fakeToken);
+        // Verifica se o serviço foi chamado corretamente
+        verify(authService, times(1)).login(loginRequest, httpServletResponse);
     }
 
     @Test
     @DisplayName("Deve retornar 204 No Content ao realizar logout")
     void whenLogout_shouldReturnNoContent() {
+        // Arrange
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
-        ResponseEntity<SuccessResponse<Void>> response = authController.logout(httpServletResponse);
+        // Act
+        ResponseEntity<Void> response = authController.logout(httpServletResponse);
 
+        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
@@ -93,16 +103,20 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 200 OK e os dados do perfil ao chamar /me com usuário autenticado")
     void whenAuthenticatedUserCallsMe_shouldReturnUserProfile() {
+        // Arrange
         Long userId = 1L;
-        UserProfileDTO userProfile = new UserProfileDTO(userId, "Test User");
+        // Atualiza a criação do DTO para incluir a role
+        UserProfileDTO userProfile = new UserProfileDTO(userId, "Test User", Role.INSTRUCTOR);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         when(authService.getUserProfile(userId)).thenReturn(userProfile);
 
+        // Act
         ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me();
 
+        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
@@ -114,6 +128,7 @@ class AuthControllerTest {
         assertNotNull(profileResponse);
         assertEquals(userId, profileResponse.userId());
         assertEquals("Test User", profileResponse.name());
+        assertEquals(Role.INSTRUCTOR, profileResponse.role());
 
         verify(authService, times(1)).getUserProfile(userId);
     }
@@ -121,8 +136,10 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve lançar UnauthorizedException ao chamar /me sem usuário autenticado")
     void whenUnauthenticatedUserCallsMe_shouldThrowUnauthorizedException() {
+        // Arrange
         SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
 
+        // Act & Assert
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authController.me());
 
         assertEquals("Usuário não autenticado", exception.getMessage());

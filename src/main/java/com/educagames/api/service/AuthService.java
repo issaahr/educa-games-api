@@ -1,14 +1,17 @@
 package com.educagames.api.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.educagames.api.exceptions.UnauthorizedException;
-import com.educagames.api.model.dto.auth.AuthResult;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.UserRepository;
+import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Serviço responsável pela autenticação de usuários.
@@ -22,6 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final CookieUtil cookieUtil;
 
     /**
      * Construtor do AuthService.
@@ -29,28 +33,31 @@ public class AuthService {
      * @param userRepository repositório para operações com usuários
      * @param passwordEncoder encoder para verificação de senhas
      * @param jwtUtil utilitário para geração e validação de tokens JWT
+     * @param cookieUtil utilitário para manipulação de cookies
      */
     public AuthService(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
-        JwtUtil jwtUtil
+        JwtUtil jwtUtil,
+        CookieUtil cookieUtil
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.cookieUtil = cookieUtil;
     }
 
     /**
      * Realiza o login do usuário com email e senha.
      * <p>
-     * Valida as credenciais fornecidas contra o banco de dados e retorna
-     * um token JWT válido junto com o papel do usuário.
+     * Valida as credenciais e, se bem-sucedido, gera um token JWT
+     * e o adiciona a um cookie HttpOnly na resposta HTTP.
      *
-     * @param request DTO contendo email e senha do usuário
-     * @return AuthResult contendo o token JWT e o papel do usuário
-     * @throws UnauthorizedException se as credenciais forem inválidas
+     * @param request DTO contendo email e senha do usuário.
+     * @param response A resposta HTTP onde o cookie de autenticação será adicionado.
+     * @throws UnauthorizedException se as credenciais forem inválidas.
      */
-    public AuthResult login(LoginRequestDTO request) {
+    public void login(LoginRequestDTO request, HttpServletResponse response) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new UnauthorizedException("Email ou senha incorretos"));
 
@@ -59,7 +66,7 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getRole().toString());
-        return new AuthResult(token, user.getRole().toString());
+        cookieUtil.addAuthCookie(response, token);
     }
 
     /**
@@ -83,6 +90,7 @@ public class AuthService {
         return UserProfileDTO.builder()
             .userId(user.getId())
             .name(user.getName())
+            .role(user.getRole())
             .build();
     }
 

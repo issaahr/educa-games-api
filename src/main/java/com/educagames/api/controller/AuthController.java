@@ -1,8 +1,5 @@
 package com.educagames.api.controller;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.educagames.api.exceptions.UnauthorizedException;
-import com.educagames.api.model.dto.auth.AuthResult;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
-import com.educagames.api.model.dto.auth.LoginResponseDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.SuccessResponse;
@@ -31,6 +26,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 /**
  * Controller responsável pelos endpoints de autenticação.
@@ -50,12 +47,9 @@ public class AuthController {
         this.cookieUtil = cookieUtil;
     }
 
-    @Operation(summary = "Autentica um usuário", description = "Valida as credenciais do usuário e retorna a role. O token JWT é enviado em um cookie HttpOnly seguro.")
+    @Operation(summary = "Autentica um usuário", description = "Valida as credenciais do usuário. Se bem-sucedido, o token JWT é enviado em um cookie HttpOnly seguro.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Login bem-sucedido",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = SuccessResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Login realizado com sucesso\", \"data\": {\"role\": \"INSTRUCTOR\"}}"))),
+        @ApiResponse(responseCode = "204", description = "Login bem-sucedido. O token foi definido no cookie HttpOnly."),
         @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
@@ -66,14 +60,12 @@ public class AuthController {
                 examples = @ExampleObject(value = "{\"message\": \"Email ou senha incorretos\", \"errors\": null}")))
     })
     @PostMapping("/login")
-    public ResponseEntity<SuccessResponse<LoginResponseDTO>> login(
+    public ResponseEntity<Void> login(
         @Valid @RequestBody LoginRequestDTO request,
         HttpServletResponse response
     ) {
-        AuthResult authResult = authService.login(request);
-        cookieUtil.addAuthCookie(response, authResult.token());
-        LoginResponseDTO loginResponse = new LoginResponseDTO(authResult.role());
-        return ResponseUtils.ok(loginResponse, "Login realizado com sucesso");
+        authService.login(request, response);
+        return ResponseUtils.noContent();
     }
 
     @Operation(summary = "Realiza o logout do usuário", description = "Invalida o cookie de autenticação do usuário.")
@@ -81,17 +73,17 @@ public class AuthController {
         @ApiResponse(responseCode = "204", description = "Logout bem-sucedido. Nenhuma resposta no corpo.")
     })
     @PostMapping("/logout")
-    public ResponseEntity<SuccessResponse<Void>> logout(HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
         cookieUtil.removeAuthCookie(response);
         return ResponseUtils.noContent();
     }
 
-    @Operation(summary = "Obtém dados do usuário autenticado", description = "Retorna informações do perfil do usuário logado, como ID e nome.")
+    @Operation(summary = "Obtém dados do usuário autenticado", description = "Retorna informações do perfil do usuário logado, como ID, nome e papel (role).")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Dados do usuário obtidos com sucesso",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = SuccessResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Dados do usuário obtidos com sucesso\", \"data\": {\"userId\": 1, \"name\": \"Nome do Usuário\"}}"))),
+                examples = @ExampleObject(value = "{\"message\": \"Dados do usuário obtidos com sucesso\", \"data\": {\"userId\": 1, \"name\": \"Nome do Usuário\", \"role\": \"INSTRUCTOR\"}}"))),
         @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),

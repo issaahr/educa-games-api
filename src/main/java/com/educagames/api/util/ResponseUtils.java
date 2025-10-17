@@ -14,7 +14,7 @@ import com.educagames.api.model.dto.shared.SuccessResponse;
  * <pre>
  * return ResponseUtils.ok(userData, "Login realizado com sucesso");
  * return ResponseUtils.created(newTurma, "Turma criada com sucesso");
- * return ResponseUtils.noContent(null); // 204 sem payload
+ * return ResponseUtils.noContent(); // 204 sem payload
  * </pre>
  */
 public class ResponseUtils {
@@ -47,9 +47,9 @@ public class ResponseUtils {
     /**
      * Retorna uma resposta HTTP 204 No Content sem corpo.
      *
-     * @return ResponseEntity com status 204 No Content
+     * @return ResponseEntity com status 204 No Content e corpo nulo.
      */
-    public static ResponseEntity<SuccessResponse<Void>> noContent() {
+    public static ResponseEntity<Void> noContent() {
         return ResponseEntity.noContent().build();
     }
 }
