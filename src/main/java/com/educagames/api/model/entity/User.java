@@ -1,10 +1,12 @@
 package com.educagames.api.model.entity;
 
-import com.educagames.api.model.enums.Role;
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDate;
+
+import jakarta.persistence.*;
+
+import com.educagames.api.model.enums.Role;
+
+import lombok.*;
 
 @Getter @Setter
 @NoArgsConstructor

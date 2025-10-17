@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.educagames.api.exceptions.JwtExpiredException;
@@ -24,12 +25,27 @@ import com.educagames.api.util.JwtUtil;
 public class JwtFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final List<String> PUBLIC_URLS = List.of(
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/actuator/health"
+    );
+
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public JwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil) {
         this.jwtUtil = jwtUtil;
         this.cookieUtil = cookieUtil;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        return PUBLIC_URLS.stream()
+            .anyMatch(p -> pathMatcher.match(p, request.getRequestURI()));
     }
 
     @Override
