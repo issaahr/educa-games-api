@@ -3,19 +3,14 @@ version: '3.8'
 services:
   educa-games-api:
     build: .
+    env_file:
+      - .env
     container_name: educa-games-api
-    environment:
-      DB_HOST: educa-games-postgres
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
     ports:
       - "8080:8080"
     depends_on:
       - educa-games-postgres
+      - educa-games-mailhog
     networks:
       - educa-games-network
     restart: unless-stopped
@@ -31,6 +26,16 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - educa-games-network
+    restart: unless-stopped
+
+  educa-games-mailhog:
+    image: mailhog/mailhog:latest
+    container_name: educa-games-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - educa-games-network
     restart: unless-stopped
