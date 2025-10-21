@@ -9,8 +9,8 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.educagames.api.exceptions.JwtExpiredException;
-import com.educagames.api.exceptions.JwtInvalidException;
+import com.educagames.api.exception.JwtExpiredException;
+import com.educagames.api.exception.JwtInvalidException;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

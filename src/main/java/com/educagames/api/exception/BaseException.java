@@ -1,4 +1,4 @@
-package com.educagames.api.exceptions;
+package com.educagames.api.exception;
 
 /**
  * Exceção base para todas as exceções customizadas da aplicação.

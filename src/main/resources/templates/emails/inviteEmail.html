@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete seu Cadastro</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+
+                <!-- Header BRANCO -->
+                <tr>
+                    <td style="background: #ffffff; padding: 50px 30px; text-align: center; border-bottom: 4px solid #1e88e5;">
+                        <!-- Logo colorido -->
+                        <div style="margin-bottom: 20px;">
+                            <img src="{{logoUrl}}" alt="EducaGames" width="240" style="max-width: 100%; height: auto;" />
+                        </div>
+                        <h1 style="color: #1565c0; margin: 0 0 5px 0; font-size: 26px; font-weight: 600;">Complete seu Cadastro</h1>
+                        <p style="color: #666666; margin: 0; font-size: 16px;">Estamos felizes em ter você conosco! </p>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding: 50px 40px;">
+                        <h2 style="color: #1565c0; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">Bem-vindo ao EducaGames!</h2>
+
+                        <p style="color: #555555; font-size: 16px; line-height: 1.7; margin: 0 0 20px 0;">
+                            Olá!
+                        </p>
+
+                        <p style="color: #555555; font-size: 16px; line-height: 1.7; margin: 0 0 25px 0;">
+                            Você foi convidado para fazer parte da nossa plataforma educacional. Estamos muito felizes em tê-lo(a) conosco!
+                        </p>
+
+                        <p style="color: #555555; font-size: 16px; line-height: 1.7; margin: 0 0 35px 0;">
+                            Para completar seu cadastro e começar a criar experiências incríveis, clique no botão abaixo:
+                        </p>
+
+                        <!-- Botão -->
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="padding: 10px 0 40px 0;">
+                                    <a href="{{inviteLink}}" style="background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%); color: #ffffff; text-decoration: none; padding: 16px 50px; border-radius: 8px; font-size: 17px; font-weight: 600; display: inline-block; box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);">
+                                         Completar Cadastro
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Info box -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; margin-bottom: 30px;">
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="color: #e65100; margin: 0; font-size: 15px; line-height: 1.6;">
+                                        <strong>⏰ Atenção:</strong> Este link é válido por <strong>{{expirationHours}} horas</strong>. Não deixe para depois!
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="color: #888888; font-size: 14px; line-height: 1.6; margin: 0; padding-top: 20px; border-top: 1px solid #eeeeee;">
+                            <strong>Problemas com o botão?</strong> Copie e cole este link no seu navegador:
+                        </p>
+                        <p style="margin: 10px 0 0 0;">
+                            <a href="{{inviteLink}}" style="color: #1e88e5; font-size: 13px; word-break: break-all; text-decoration: none;">{{inviteLink}}</a>
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background: #f8f9fa; padding: 30px 40px; text-align: center; border-top: 1px solid #e0e0e0;">
+                        <p style="color: #1565c0; font-size: 14px; margin: 0 0 5px 0; font-weight: 600;">
+                            EducaGames
+                        </p>
+                        <p style="color: #666666; font-size: 12px; margin: 0;">
+                            © 2025 EducaGames. Todos os direitos reservados.
+                        </p>
+                        <p style="color: #999999; font-size: 12px; margin: 15px 0 0 0;">
+                            Se você não solicitou este convite, pode ignorar este email com segurança.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+
+            <!-- Spacer -->
+            <table width="600" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="padding: 20px; text-align: center;">
+                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                            Este é um email automático, por favor não responda.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html>

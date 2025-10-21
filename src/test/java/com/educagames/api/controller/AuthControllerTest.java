@@ -3,16 +3,15 @@ package com.educagames.api.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,15 +28,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.educagames.api.exceptions.UnauthorizedException;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.service.AuthService;
 import com.educagames.api.util.CookieUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -68,7 +64,6 @@ class AuthControllerTest {
     void whenLoginWithValidCredentials_shouldReturnNoContent() {
         // Arrange
         MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
-        // Como o método authService.login agora é void, usamos doNothing()
         doNothing().when(authService).login(any(LoginRequestDTO.class), any(HttpServletResponse.class));
 
         // Act
@@ -114,7 +109,7 @@ class AuthControllerTest {
         when(authService.getUserProfile(userId)).thenReturn(userProfile);
 
         // Act
-        ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me();
+        ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me(userId);
 
         // Assert
         assertNotNull(response);
@@ -133,17 +128,4 @@ class AuthControllerTest {
         verify(authService, times(1)).getUserProfile(userId);
     }
 
-    @Test
-    @DisplayName("Deve lançar UnauthorizedException ao chamar /me sem usuário autenticado")
-    void whenUnauthenticatedUserCallsMe_shouldThrowUnauthorizedException() {
-        // Arrange
-        SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
-
-        // Act & Assert
-        UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authController.me());
-
-        assertEquals("Usuário não autenticado", exception.getMessage());
-
-        verify(authService, never()).getUserProfile(anyLong());
-    }
 }

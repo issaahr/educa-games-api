@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.educagames.api.exceptions.UnauthorizedException;
+import com.educagames.api.exception.UnauthorizedException;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.entity.User;
@@ -31,8 +33,6 @@ import com.educagames.api.model.enums.Role;
 import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
