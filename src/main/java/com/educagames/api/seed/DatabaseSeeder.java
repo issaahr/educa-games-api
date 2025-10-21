@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.educagames.api.model.enums.InviteStatus;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DatabaseSeeder implements ApplicationRunner {
+public class DatabaseSeeder {
 
     private final UserRepository userRepository;
     private final InviteRepository inviteRepository;
@@ -44,11 +44,9 @@ public class DatabaseSeeder implements ApplicationRunner {
      * (seja como usuário ativo ou como convite pendente). Caso não exista,
      * cria um novo convite para o instrutor.
      * </p>
-     *
-     * @param args argumentos da aplicação (não utilizados)
      */
-    @Override
-    public void run(ApplicationArguments args) {
+    @EventListener(ApplicationReadyEvent.class)
+    public void seed() {
         List<String> instructorEmails = Arrays.stream(instructorEmailsConfig.split(","))
             .map(String::trim)
             .filter(email -> !email.isEmpty())
@@ -76,6 +74,6 @@ public class DatabaseSeeder implements ApplicationRunner {
             );
         }
 
-        log.info("Processo de seed finalizado.");
+        log.info("Processo de seed finalizado com sucesso!");
     }
 }
