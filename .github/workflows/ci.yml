@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - develop
+      - production
   pull_request:
     branches:
       - develop
+      - production
 jobs:
   build:
     runs-on: ubuntu-latest
