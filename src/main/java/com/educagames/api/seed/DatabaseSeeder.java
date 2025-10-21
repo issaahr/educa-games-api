@@ -2,7 +2,6 @@ package com.educagames.api.seed;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -50,11 +49,10 @@ public class DatabaseSeeder implements ApplicationRunner {
      */
     @Override
     public void run(ApplicationArguments args) {
-        List<String> instructorEmails = Arrays.asList(instructorEmailsConfig.split(","))
-            .stream()
+        List<String> instructorEmails = Arrays.stream(instructorEmailsConfig.split(","))
             .map(String::trim)
             .filter(email -> !email.isEmpty())
-            .collect(Collectors.toList());
+            .toList();
 
         log.info("Iniciando processo de seed para {} instrutores...", instructorEmails.size());
 

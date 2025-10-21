@@ -48,7 +48,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -68,7 +68,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -88,7 +88,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -108,7 +108,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -128,7 +128,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -148,7 +148,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -168,7 +168,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.GONE, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -180,7 +180,7 @@ class GlobalExceptionHandlerTest {
     void whenBaseExceptionWithoutResponseStatus_shouldReturnInternalServerError() {
         // Given
         String errorMessage = "Erro customizado";
-        BaseException exception = new BaseException(errorMessage) {};
+        BaseException exception = new BaseException(errorMessage) { };
 
         // When
         ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleBaseException(exception);
@@ -188,7 +188,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals(errorMessage, body.getMessage());
@@ -201,11 +201,11 @@ class GlobalExceptionHandlerTest {
         // Given
         MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
-        
+
         FieldError fieldError1 = new FieldError("user", "email", "deve ser um email válido");
         FieldError fieldError2 = new FieldError("user", "name", "não pode estar em branco");
         List<FieldError> fieldErrors = Arrays.asList(fieldError1, fieldError2);
-        
+
         when(exception.getBindingResult()).thenReturn(bindingResult);
         when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
 
@@ -215,7 +215,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals("Erro de validação nos campos", body.getMessage());
@@ -231,9 +231,9 @@ class GlobalExceptionHandlerTest {
         // Given
         MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
-        
+
         when(exception.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(Arrays.asList());
+        when(bindingResult.getFieldErrors()).thenReturn(List.of());
 
         // When
         ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleValidationExceptions(exception);
@@ -241,7 +241,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals("Erro de validação nos campos", body.getMessage());
@@ -261,7 +261,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals("Erro interno no servidor", body.getMessage());
@@ -280,7 +280,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals("Erro interno no servidor", body.getMessage());
@@ -299,7 +299,7 @@ class GlobalExceptionHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        
+
         ErrorResponse body = response.getBody();
         assertNotNull(body);
         assertEquals("Erro interno no servidor", body.getMessage());

@@ -24,11 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.educagames.api.exception.EmailTemplateLoadException;
 
-/**
- * Testes unitários para a classe {@link InviteEmailTemplate}.
- *
- * Testa os métodos de geração de templates de email para convites.
- */
 @ExtendWith(MockitoExtension.class)
 class InviteEmailTemplateTest {
 
