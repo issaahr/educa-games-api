@@ -9,8 +9,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import com.educagames.api.exceptions.JwtExpiredException;
-import com.educagames.api.exceptions.JwtInvalidException;
+import com.educagames.api.exception.JwtExpiredException;
+import com.educagames.api.exception.JwtInvalidException;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

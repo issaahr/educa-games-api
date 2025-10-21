@@ -1,4 +1,4 @@
-package com.educagames.api.exceptions;
+package com.educagames.api.exception;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -34,16 +34,21 @@ API RESTful desenvolvida em Spring Boot para gerenciar uma plataforma de ensino 
 - **Spring Data JPA** - Persistência de dados
 - **PostgreSQL 15** - Banco de dados
 - **JWT** - Autenticação stateless
+- **Spring Mail** - Envio de emails transacionais
 - **Docker & Docker Compose** - Containerização
 - **Gradle** - Gerenciamento de dependências
 - **Lombok** - Redução de boilerplate
 - **SpringDoc OpenAPI** - Documentação interativa
+- **Dotenv Java** - Gerenciamento de variáveis de ambiente
 
 ## Funcionalidades
 
 - ✅ **Autenticação JWT** - Login/logout seguro com tokens
 - ✅ **Cookies HttpOnly** - Armazenamento seguro de tokens
 - ✅ **Autorização por roles** - Controle de acesso baseado em papéis
+- ✅ **Sistema de convites** - Convites por email com tokens únicos
+- ✅ **Envio de emails** - Templates HTML responsivos para convites
+- ✅ **Cadastro por convite** - Finalização de cadastro via link de convite
 - ✅ **Validação de dados** - Validação automática de DTOs
 - ✅ **Tratamento de erros** - Respostas padronizadas para erros
 - ✅ **Health checks** - Monitoramento da saúde da aplicação
@@ -56,34 +61,19 @@ API RESTful desenvolvida em Spring Boot para gerenciar uma plataforma de ensino 
 1. Clone o repositório:
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/issaahr/educa-games-api.git
 cd educa-games-api
 ```
 
 2. Configure as variáveis de ambiente:
 
+Copie o arquivo `.env.example` para `.env` e preencha com seus valores:
+
 ```bash
 cp .env.example .env
-# Edite o arquivo .env com suas configurações
 ```
 
-3. Configure as variáveis no `.env`:
-
-```env
-# Banco de dados
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=educagames
-DB_USER=postgres
-DB_PASSWORD=senha123
-
-# JWT
-JWT_SECRET=sua-chave-secreta-super-segura-aqui
-JWT_EXPIRATION=86400000
-
-# Spring Profile
-SPRING_PROFILES_ACTIVE=dev
-```
+Edite o arquivo `.env` com suas configurações específicas. Consulte o arquivo `.env.example` para ver todas as variáveis necessárias.
 
 ## Como rodar
 
@@ -116,12 +106,11 @@ docker-compose up educa-games-postgres
 ### 3. 🏗️ Build da aplicação
 
 ```bash
-# Build JAR
-./gradlew bootJar
-
 # Build Docker
 docker build -t educagames-api .
 ```
+
+> **Nota**: O Dockerfile já executa `./gradlew bootJar` internamente, não é necessário executar separadamente.
 
 ## Documentação da API
 
@@ -137,6 +126,8 @@ Acesse a documentação interativa:
 - `POST /api/auth/login` - Login do usuário
 - `POST /api/auth/logout` - Logout do usuário
 - `GET /api/auth/me` - Dados do usuário autenticado
+- `GET /api/auth/validate-invite` - Valida um token de convite
+- `POST /api/auth/complete-signup` - Finaliza cadastro via convite
 
 ### 🏥 Monitoramento
 
@@ -164,13 +155,15 @@ Acesse a documentação interativa:
 
 ### Camadas da aplicação
 
-- **Controller** - Endpoints REST
-- **Service** - Lógica de negócio
-- **Repository** - Acesso a dados
-- **Entity** - Modelo de dados
-- **DTO** - Transferência de dados
-- **Filter** - Interceptação de requests
-- **Config** - Configurações da aplicação
+- **Controller** - Endpoints REST (AuthController)
+- **Service** - Lógica de negócio (AuthService, InviteService, EmailService)
+- **Repository** - Acesso a dados (UserRepository, InviteRepository)
+- **Entity** - Modelo de dados (User, Invite, BaseEntity)
+- **DTO** - Transferência de dados (LoginRequestDTO, UserProfileDTO, etc.)
+- **Filter** - Interceptação de requests (JwtFilter)
+- **Config** - Configurações da aplicação (SecurityConfig, CorsConfig)
+- **Exception** - Tratamento personalizado de erros
+- **Util** - Utilitários (JwtUtil, CookieUtil, ResponseUtils)
 
 ## Desenvolvimento
 
@@ -196,14 +189,22 @@ Acesse a documentação interativa:
 src/
 ├── main/
 │   ├── java/com/educagames/api/
-│   │   ├── config/          # Configurações
+│   │   ├── config/          # Configurações (Security, CORS, etc.)
 │   │   ├── controller/      # Controllers REST
 │   │   ├── service/         # Lógica de negócio
+│   │   │   └── email/       # Templates de email
 │   │   ├── repository/      # Acesso a dados
-│   │   ├── model/           # Entidades e DTOs
-│   │   ├── util/            # Utilitários
-│   │   └── filter/          # Filtros HTTP
+│   │   ├── model/           # Entidades, DTOs e Enums
+│   │   │   ├── dto/         # Data Transfer Objects
+│   │   │   ├── entity/      # Entidades JPA
+│   │   │   └── enums/       # Enumerações
+│   │   ├── exception/       # Tratamento de exceções
+│   │   ├── filter/          # Filtros HTTP (JWT)
+│   │   ├── seed/            # Dados iniciais
+│   │   └── util/            # Utilitários (JWT, Cookies, etc.)
 │   └── resources/
+│       ├── templates/       # Templates de email HTML
+│       │   └── emails/
 │       ├── application.properties
 │       ├── application-dev.properties
 │       └── application-prod.properties
@@ -214,6 +215,17 @@ src/
 
 - **dev**: Desenvolvimento local, logs detalhados, ddl-auto=update
 - **prod**: Produção, logs mínimos, ddl-auto=none, cookies seguros
+
+### 📧 Sistema de Convites
+
+O sistema permite convidar novos usuários via email:
+
+1. **Criação de convite**: Gera token único e envia email HTML responsivo
+2. **Validação**: Verifica se o convite é válido e não expirado
+3. **Cadastro**: Usuário completa cadastro através do link do email
+4. **Expiração**: Convites têm prazo configurável (padrão: 24h)
+
+Os templates de email são responsivos e incluem branding da aplicação.
 
 ## Licença
 
