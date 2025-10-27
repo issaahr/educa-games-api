@@ -1,12 +1,12 @@
 services:
   - type: web
     name: educa-games-api
-    env: docker
+    runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
     region: oregon
-    branch: refactor/change-email-service
+    branch: production
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod

@@ -131,30 +131,10 @@ class JwtFilterTest {
     }
 
     @Test
-    @DisplayName("Deve autenticar usuário com token válido no header Authorization")
-    void whenValidTokenInAuthorizationHeader_shouldAuthenticateUser() throws ServletException, IOException {
-        // Given
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + VALID_TOKEN);
-        doNothing().when(jwtUtil).isValid(VALID_TOKEN);
-        when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
-
-        // When
-        jwtFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    @DisplayName("Deve autenticar usuário com token válido no cookie quando não há header Authorization")
+    @DisplayName("Deve autenticar usuário com token válido no cookie")
     void whenValidTokenInCookie_shouldAuthenticateUser() throws ServletException, IOException {
         // Given
         Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
-        when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
@@ -175,24 +155,8 @@ class JwtFilterTest {
     @DisplayName("Deve continuar sem autenticação quando não há token")
     void whenNoToken_shouldContinueWithoutAuthentication() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(null);
-
-        // When
-        jwtFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-        verify(jwtUtil, never()).isValid(any());
-    }
-
-    @Test
-    @DisplayName("Deve continuar sem autenticação quando header Authorization não tem Bearer prefix")
-    void whenAuthorizationHeaderWithoutBearerPrefix_shouldContinueWithoutAuthentication() throws ServletException, IOException {
-        // Given
-        when(request.getHeader("Authorization")).thenReturn("Basic " + VALID_TOKEN);
-        when(request.getCookies()).thenReturn(null);
+        when(cookieUtil.getTokenFromCookie(null)).thenReturn(null);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -207,8 +171,10 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token é inválido")
     void whenInvalidToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
+        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        when(request.getCookies()).thenReturn(cookies);
+        when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtInvalidException jwtException = new JwtInvalidException("Token inválido");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + INVALID_TOKEN);
         doThrow(jwtException).when(jwtUtil).isValid(INVALID_TOKEN);
 
         // When
@@ -224,8 +190,10 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token está expirado")
     void whenExpiredToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
+        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        when(request.getCookies()).thenReturn(cookies);
+        when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtExpiredException jwtException = new JwtExpiredException("Token expirado");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + INVALID_TOKEN);
         doThrow(jwtException).when(jwtUtil).isValid(INVALID_TOKEN);
 
         // When
@@ -238,53 +206,10 @@ class JwtFilterTest {
     }
 
     @Test
-    @DisplayName("Deve priorizar token do header Authorization sobre cookie")
-    void whenTokenInBothHeaderAndCookie_shouldPrioritizeHeader() throws ServletException, IOException {
-        // Given
-        String headerToken = "header.token";
-
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + headerToken);
-        doNothing().when(jwtUtil).isValid(headerToken);
-        when(jwtUtil.getUserId(headerToken)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(headerToken)).thenReturn(TEST_ROLE);
-
-        // When
-        jwtFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        verify(jwtUtil).isValid(headerToken);
-        verify(cookieUtil, never()).getTokenFromCookie(any());
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
-    }
-
-    @Test
-    @DisplayName("Deve buscar token no cookie quando header Authorization está vazio")
-    void whenEmptyAuthorizationHeader_shouldCheckCookie() throws ServletException, IOException {
-        // Given
-        Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
-        when(request.getHeader("Authorization")).thenReturn("");
-        when(request.getCookies()).thenReturn(cookies);
-        when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(VALID_TOKEN);
-        doNothing().when(jwtUtil).isValid(VALID_TOKEN);
-        when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
-
-        // When
-        jwtFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        verify(cookieUtil).getTokenFromCookie(cookies);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
-    }
-
-    @Test
     @DisplayName("Deve continuar sem autenticação quando cookie não contém token")
     void whenCookieWithoutToken_shouldContinueWithoutAuthentication() throws ServletException, IOException {
         // Given
         Cookie[] cookies = {new Cookie("otherCookie", "value")};
-        when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(null);
 
