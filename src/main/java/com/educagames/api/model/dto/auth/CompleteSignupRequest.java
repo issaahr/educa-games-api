@@ -1,6 +1,7 @@
 package com.educagames.api.model.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,6 +19,10 @@ public class CompleteSignupRequest {
     @Schema(description = "Nome do usuário a ser criado", example = "Ana Silva Ribeiro", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "O nome não pode ser vazio")
     @Size(min = 3, max = 120, message = "O nome deve ter pelo menos 3 caracteres")
+    @Pattern(
+        regexp = "^[\\p{L}\\p{M}]+([\\s'\\-][\\p{L}\\p{M}]+)*$",
+        message = "Nome não pode conter números ou símbolos especiais"
+    )
     private final String name;
 
     @Schema(description = "Senha do usuário a ser criado", example = "senha123", requiredMode = Schema.RequiredMode.REQUIRED)
