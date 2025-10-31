@@ -1,15 +1,19 @@
 package com.educagames.api.model.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.educagames.api.model.enums.Role;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
-import com.educagames.api.model.enums.Role;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,5 +44,25 @@ public class User extends BaseEntity {
     @Column(nullable=false)
     private boolean active;
 
-    private LocalDate birthDate;
+    @Column()
+    private LocalDateTime lastLogin;
+
+    @Column()
+    private LocalDateTime birthDate;
+
+    @Column(length = 500)
+    private String description;
+
+    @Column()
+    private String imageUrl;
+
+    // Relations
+    @Builder.Default
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StudentClassroom> studentClassrooms = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "instructor", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Classroom> classroomsTaught = new ArrayList<>();
+
 }

@@ -90,6 +90,8 @@ public class AuthService {
         userRepository.save(newUser);
 
         invite.setStatus(InviteStatus.ACCEPTED);
+        invite.setAcceptedAt(LocalDateTime.now());
+
         inviteRepository.save(invite);
     }
 
