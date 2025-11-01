@@ -2,13 +2,25 @@ package com.educagames.api.model.entity;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import com.educagames.api.model.enums.InviteStatus;
 import com.educagames.api.model.enums.Role;
 
-import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -17,7 +29,8 @@ import org.hibernate.annotations.ColumnDefault;
 @AllArgsConstructor
 @Builder
 @Table(
-    uniqueConstraints = @UniqueConstraint(columnNames = {"email", "classroomId"})
+    name = "invites",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"email", "classroom_id"})
 )
 
 public class Invite extends BaseEntity {
@@ -53,11 +66,11 @@ public class Invite extends BaseEntity {
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "classroomId")
+    @JoinColumn
     private Classroom classroom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "senderId", nullable = false)
+    @JoinColumn(nullable = false)
     private User sender;
 
 }

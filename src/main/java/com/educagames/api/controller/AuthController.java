@@ -1,8 +1,5 @@
 package com.educagames.api.controller;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
 import com.educagames.api.model.dto.auth.InviteDetailsDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
@@ -30,6 +28,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -109,8 +109,8 @@ public class AuthController {
                             examples = @ExampleObject(value = "{\"message\": \"Usuário não autenticado\", \"errors\": null}")))
     })
     @GetMapping("/me")
-    public ResponseEntity<SuccessResponse<UserProfileDTO>> me(@AuthenticationPrincipal Long userId) {
-        UserProfileDTO userProfile = authService.getUserProfile(userId);
+    public ResponseEntity<SuccessResponse<UserProfileDTO>> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserProfileDTO userProfile = authService.getUserProfile(userDetails.getUser().getId());
         return ResponseUtils.ok(userProfile, "Dados do usuário obtidos com sucesso");
     }
 

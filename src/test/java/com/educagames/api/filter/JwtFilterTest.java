@@ -13,12 +13,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,10 +23,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.educagames.api.config.CustomUserDetails;
+import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.exception.JwtExpiredException;
 import com.educagames.api.exception.JwtInvalidException;
+import com.educagames.api.model.entity.User;
+import com.educagames.api.model.enums.Role;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class JwtFilterTest {
@@ -42,6 +46,9 @@ class JwtFilterTest {
 
     @Mock
     private CookieUtil cookieUtil;
+
+    @Mock
+    private CustomUserDetailsService customUserDetailsService;
 
     @Mock
     private HttpServletRequest request;
@@ -61,7 +68,7 @@ class JwtFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtFilter = new JwtFilter(jwtUtil, cookieUtil);
+        jwtFilter = new JwtFilter(jwtUtil, cookieUtil, customUserDetailsService);
         SecurityContextHolder.clearContext();
     }
 
@@ -134,17 +141,29 @@ class JwtFilterTest {
     @DisplayName("Deve autenticar usuário com token válido no header Authorization")
     void whenValidTokenInAuthorizationHeader_shouldAuthenticateUser() throws ServletException, IOException {
         // Given
+        User testUser = User.builder()
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(TEST_USER_ID);
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+
         when(request.getHeader("Authorization")).thenReturn("Bearer " + VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
         when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
+        when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
+        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        assertEquals(TEST_USER_ID, principal.getUser().getId());
         assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
         verify(filterChain).doFilter(request, response);
     }
@@ -153,6 +172,15 @@ class JwtFilterTest {
     @DisplayName("Deve autenticar usuário com token válido no cookie quando não há header Authorization")
     void whenValidTokenInCookie_shouldAuthenticateUser() throws ServletException, IOException {
         // Given
+        User testUser = User.builder()
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(TEST_USER_ID);
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+
         Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
         when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(cookies);
@@ -160,13 +188,16 @@ class JwtFilterTest {
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
         when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
+        when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
+        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        assertEquals(TEST_USER_ID, principal.getUser().getId());
         assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
         verify(filterChain).doFilter(request, response);
     }
@@ -242,11 +273,20 @@ class JwtFilterTest {
     void whenTokenInBothHeaderAndCookie_shouldPrioritizeHeader() throws ServletException, IOException {
         // Given
         String headerToken = "header.token";
+        User testUser = User.builder()
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(TEST_USER_ID);
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + headerToken);
         doNothing().when(jwtUtil).isValid(headerToken);
         when(jwtUtil.getUserId(headerToken)).thenReturn(TEST_USER_ID);
         when(jwtUtil.getRole(headerToken)).thenReturn(TEST_ROLE);
+        when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -255,13 +295,24 @@ class JwtFilterTest {
         verify(jwtUtil).isValid(headerToken);
         verify(cookieUtil, never()).getTokenFromCookie(any());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
+        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        assertEquals(TEST_USER_ID, principal.getUser().getId());
     }
 
     @Test
     @DisplayName("Deve buscar token no cookie quando header Authorization está vazio")
     void whenEmptyAuthorizationHeader_shouldCheckCookie() throws ServletException, IOException {
         // Given
+        User testUser = User.builder()
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(TEST_USER_ID);
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+
         Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
         when(request.getHeader("Authorization")).thenReturn("");
         when(request.getCookies()).thenReturn(cookies);
@@ -269,6 +320,7 @@ class JwtFilterTest {
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
         when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
+        when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -276,7 +328,9 @@ class JwtFilterTest {
         // Then
         verify(cookieUtil).getTokenFromCookie(cookies);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
+        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        assertEquals(TEST_USER_ID, principal.getUser().getId());
     }
 
     @Test

@@ -1,7 +1,17 @@
 package com.educagames.api.model.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -11,7 +21,7 @@ import lombok.*;
 @Builder
 @Table(
     name = "student_classes",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"studentId", "classroomId"})
+    uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "classroom_id"})
 )
 public class StudentClassroom extends BaseEntity {
 
@@ -23,11 +33,11 @@ public class StudentClassroom extends BaseEntity {
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "studentId", nullable = false)
+    @JoinColumn(nullable = false)
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "classroomId", nullable = false)
+    @JoinColumn(nullable = false)
     private Classroom classroom;
 
 }

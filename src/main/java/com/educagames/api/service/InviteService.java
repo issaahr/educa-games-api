@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.educagames.api.model.entity.Invite;
+import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.InviteStatus;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.repository.InviteRepository;
@@ -36,16 +37,16 @@ public class InviteService {
     /**
      * Cria um novo convite e envia email para o destinatário.
      * <p>
-     * O convite é criado com status PENDING e um token único.
-     * O envio de email é feito de forma assíncrona, e o status do convite
-     * é atualizado para SENT apenas se o envio for bem-sucedido.
-     * Convites com falha no envio permanecerão como PENDING para reprocessamento.
+     * O convite é criado com status NOT_SENT e um token único.
+     * O status do convite é atualizado para AWAITING_ACCEPTANCE se o envio for bem-sucedido.
+     * Convites com falha no envio permanecerão como NOT_SENT para reprocessamento.
      * </p>
      *
      * @param email email do destinatário do convite
+     * @param sender usuário que está enviando o convite
      */
     @Transactional
-    public void createAndSendInvite(String email) {
+    public void createAndSendInvite(String email, User sender) {
         String token = UUID.randomUUID().toString();
 
         Invite invite = Invite.builder()
@@ -54,19 +55,12 @@ public class InviteService {
             .status(InviteStatus.NOT_SENT)
             .role(Role.INSTRUCTOR)
             .expiresAt(LocalDateTime.now().plusHours(expirationHours))
+            .resendCount(0)
+            .sender(sender)
             .build();
 
         inviteRepository.save(invite);
-
-        String inviteLink = String.format("%s/cadastro?invite=%s", frontendUrl, token);
-        EmailTemplate configuredTemplate = inviteEmailTemplate.withData(inviteLink, logoUrl, expirationHours);
-
-        boolean enviado = emailService.send(email, configuredTemplate);
-
-        if (enviado) {
-            invite.setStatus(InviteStatus.AWAITING_ACCEPTANCE);
-            inviteRepository.save(invite);
-        }
+        sendInviteEmail(invite);
     }
 
     /**
@@ -79,6 +73,18 @@ public class InviteService {
      */
     @Transactional
     public void resendInvite(Invite invite) {
+        sendInviteEmail(invite);
+    }
+
+    /**
+     * Envia o email do convite e atualiza o status para AWAITING_ACCEPTANCE se bem-sucedido.
+     * <p>
+     * Método privado que centraliza a lógica comum de envio de emails de convite.
+     * </p>
+     *
+     * @param invite convite cujo email será enviado
+     */
+    private void sendInviteEmail(Invite invite) {
         String inviteLink = String.format("%s/cadastro?invite=%s", frontendUrl, invite.getToken());
         EmailTemplate configuredTemplate = inviteEmailTemplate.withData(inviteLink, logoUrl, expirationHours);
 
