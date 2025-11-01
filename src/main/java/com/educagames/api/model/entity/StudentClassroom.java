@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +26,7 @@ import lombok.Setter;
 )
 public class StudentClassroom extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 10)
     private String enrollment;
 
     @Column(nullable = false)

@@ -1,11 +1,11 @@
 package com.educagames.api.service;
 
-import com.educagames.api.config.CustomUserDetails;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.exception.NotFoundException;
 import com.educagames.api.exception.UnauthorizedException;
 import com.educagames.api.model.entity.User;
@@ -64,4 +64,3 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new CustomUserDetails(user);
     }
 }
-

@@ -1,9 +1,6 @@
 package com.educagames.api.filter;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -12,6 +9,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,19 +27,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.educagames.api.config.CustomUserDetails;
-import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.exception.JwtExpiredException;
 import com.educagames.api.exception.JwtInvalidException;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.Role;
+import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class JwtFilterTest {
@@ -161,7 +158,7 @@ class JwtFilterTest {
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        assertInstanceOf(CustomUserDetails.class, auth.getPrincipal());
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         assertEquals(TEST_USER_ID, principal.getUser().getId());
         assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
@@ -195,7 +192,7 @@ class JwtFilterTest {
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        assertInstanceOf(CustomUserDetails.class, auth.getPrincipal());
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         assertEquals(TEST_USER_ID, principal.getUser().getId());
         assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
@@ -295,7 +292,7 @@ class JwtFilterTest {
         verify(jwtUtil).isValid(headerToken);
         verify(cookieUtil, never()).getTokenFromCookie(any());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        assertInstanceOf(CustomUserDetails.class, auth.getPrincipal());
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         assertEquals(TEST_USER_ID, principal.getUser().getId());
     }
@@ -328,7 +325,7 @@ class JwtFilterTest {
         // Then
         verify(cookieUtil).getTokenFromCookie(cookies);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertTrue(auth.getPrincipal() instanceof CustomUserDetails);
+        assertInstanceOf(CustomUserDetails.class, auth.getPrincipal());
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         assertEquals(TEST_USER_ID, principal.getUser().getId());
     }

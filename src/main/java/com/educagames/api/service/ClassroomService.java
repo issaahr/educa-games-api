@@ -6,8 +6,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.educagames.api.config.CustomUserDetails;
+import com.educagames.api.exception.NotFoundException;
 import com.educagames.api.model.dto.classroom.ClassroomDTO;
+import com.educagames.api.model.dto.classroom.ClassroomDetailsDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
+import com.educagames.api.model.dto.classroom.StudentClassroomDTO;
 import com.educagames.api.model.entity.Classroom;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.ClassroomRepository;
@@ -48,6 +51,36 @@ public class ClassroomService {
                 dto.setId(classroom.getId());
                 dto.setName(classroom.getName());
                 dto.setActive(classroom.isActive());
+                return dto;
+            })
+            .toList();
+    }
+
+    public ClassroomDetailsDTO getClassById(Long id){
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+        User instructor = userDetails.getUser();
+
+        Classroom classroom = classroomRepository.findByIdAndInstructorId(id, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
+
+        ClassroomDetailsDTO dto = new ClassroomDetailsDTO();
+        dto.setId(classroom.getId());
+        dto.setName(classroom.getName());
+        dto.setStudents(getClassStudents(classroom));
+        return dto;
+    }
+
+    private List<StudentClassroomDTO> getClassStudents(Classroom classroom){
+        return classroom.getStudents().stream()
+            .map(student -> {
+                StudentClassroomDTO dto = new StudentClassroomDTO();
+                dto.setId(student.getId());
+                dto.setName(student.getStudent().getName());
+
+                dto.setEnrollment(student.getEnrollment());
+                dto.setActive(student.isActive());
                 return dto;
             })
             .toList();
