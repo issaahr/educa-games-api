@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.educagames.api.exception.*;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
-import com.educagames.api.model.dto.auth.InviteDetailsDTO;
+import com.educagames.api.model.dto.auth.InviteDetailsResponseDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.entity.Invite;
@@ -34,13 +34,13 @@ public class AuthService {
     private final CookieUtil cookieUtil;
 
     @Transactional(readOnly = true)
-    public InviteDetailsDTO validateInvite(String token) {
+    public InviteDetailsResponseDTO validateInvite(String token) {
         Invite invite = inviteRepository.findByToken(token)
                 .orElseThrow(() -> new NotFoundException("Convite inválido"));
 
         validateInvite(invite);
 
-        return InviteDetailsDTO.builder()
+        return InviteDetailsResponseDTO.builder()
                 .type(invite.getRole())
                 .email(invite.getEmail())
                 .build();

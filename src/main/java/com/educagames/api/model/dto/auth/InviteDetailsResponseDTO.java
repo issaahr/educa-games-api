@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InviteDetailsDTO {
+public class InviteDetailsResponseDTO {
 
     @Schema(description = "Email para preencher o campo na tela de cadastro", example = "email@email.com")
     private String email;

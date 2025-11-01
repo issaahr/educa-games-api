@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
-import com.educagames.api.model.dto.auth.InviteDetailsDTO;
+import com.educagames.api.model.dto.auth.InviteDetailsResponseDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
@@ -61,8 +61,8 @@ public class AuthController {
                             examples = @ExampleObject(value = "{\"message\": \"Convite já utilizado.\", \"errors\": null}")))
     })
     @GetMapping("/validate-invite")
-    public ResponseEntity<SuccessResponse<InviteDetailsDTO>> validateInvite(@RequestParam("token") String token) {
-        InviteDetailsDTO inviteDetails = authService.validateInvite(token);
+    public ResponseEntity<SuccessResponse<InviteDetailsResponseDTO>> validateInvite(@RequestParam("token") String token) {
+        InviteDetailsResponseDTO inviteDetails = authService.validateInvite(token);
         return ResponseUtils.ok(inviteDetails, "Convite válido");
     }
 

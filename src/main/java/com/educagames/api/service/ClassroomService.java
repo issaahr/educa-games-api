@@ -1,9 +1,12 @@
 package com.educagames.api.service;
 
+import java.util.List;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.educagames.api.config.CustomUserDetails;
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
 import com.educagames.api.model.entity.Classroom;
 import com.educagames.api.model.entity.User;
@@ -29,5 +32,24 @@ public class ClassroomService {
         classroom.setActive(true);
         classroom.setInstructor(instructor);
         classroomRepository.save(classroom);
+    }
+
+    public List<ClassroomDTO> listClasses (){
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+        User instructor = userDetails.getUser();
+
+        List<Classroom> classes = classroomRepository.findByInstructorId(instructor.getId());
+
+        return classes.stream()
+            .map( classroom -> {
+                ClassroomDTO dto = new ClassroomDTO();
+                dto.setId(classroom.getId());
+                dto.setName(classroom.getName());
+                dto.setActive(classroom.isActive());
+                return dto;
+            })
+            .toList();
     }
 }

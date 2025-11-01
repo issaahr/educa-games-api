@@ -1,15 +1,24 @@
 package com.educagames.api.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.service.ClassroomService;
 import com.educagames.api.util.ResponseUtils;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/classroom")
@@ -27,5 +36,10 @@ public class ClassroomController {
         return ResponseUtils.created(request, "Turma criada com sucesso");
     }
 
-
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("/")
+    public ResponseEntity<SuccessResponse<List<ClassroomDTO>>> listClass(){
+        List<ClassroomDTO> classes = classroomService.listClasses();
+        return ResponseUtils.ok(classes);
+    }
 }
