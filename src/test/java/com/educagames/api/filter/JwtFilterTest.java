@@ -205,24 +205,8 @@ class JwtFilterTest {
     @DisplayName("Deve continuar sem autenticação quando não há token")
     void whenNoToken_shouldContinueWithoutAuthentication() throws ServletException, IOException {
         // Given
-        when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(null);
-
-        // When
-        jwtFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-        verify(jwtUtil, never()).isValid(any());
-    }
-
-    @Test
-    @DisplayName("Deve continuar sem autenticação quando header Authorization não tem Bearer prefix")
-    void whenAuthorizationHeaderWithoutBearerPrefix_shouldContinueWithoutAuthentication() throws ServletException, IOException {
-        // Given
-        when(request.getHeader("Authorization")).thenReturn("Basic " + VALID_TOKEN);
-        when(request.getCookies()).thenReturn(null);
+        when(cookieUtil.getTokenFromCookie(null)).thenReturn(null);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -237,8 +221,10 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token é inválido")
     void whenInvalidToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
+        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        when(request.getCookies()).thenReturn(cookies);
+        when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtInvalidException jwtException = new JwtInvalidException("Token inválido");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + INVALID_TOKEN);
         doThrow(jwtException).when(jwtUtil).isValid(INVALID_TOKEN);
 
         // When
@@ -254,8 +240,10 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token está expirado")
     void whenExpiredToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
+        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        when(request.getCookies()).thenReturn(cookies);
+        when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtExpiredException jwtException = new JwtExpiredException("Token expirado");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + INVALID_TOKEN);
         doThrow(jwtException).when(jwtUtil).isValid(INVALID_TOKEN);
 
         // When
@@ -335,7 +323,6 @@ class JwtFilterTest {
     void whenCookieWithoutToken_shouldContinueWithoutAuthentication() throws ServletException, IOException {
         // Given
         Cookie[] cookies = {new Cookie("otherCookie", "value")};
-        when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(null);
 

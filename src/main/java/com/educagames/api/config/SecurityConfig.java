@@ -10,8 +10,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.educagames.api.filter.JwtFilter;
+import com.educagames.api.util.CookieUtil;
+import com.educagames.api.util.JwtUtil;
 
 /**
  * Configuração de segurança da aplicação.
@@ -21,39 +24,50 @@ import com.educagames.api.filter.JwtFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(JwtFilter jwtFilter, CustomAuthenticationEntryPoint authenticationEntryPoint) {
-        this.jwtFilter = jwtFilter;
+    public SecurityConfig(
+        CustomAuthenticationEntryPoint authenticationEntryPoint,
+        CorsConfigurationSource corsConfigurationSource
+    ) {
         this.authenticationEntryPoint = authenticationEntryPoint;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     /**
-     * Configuração do filtro de segurança.
-     * Permite acesso público a endpoints de documentação e healthcheck.
+     * Declara o bean do filtro JWT.
+     *
+     * @param jwtUtil utilitário para manipulação e validação de tokens
+     * @param cookieUtil utilitário para leitura de cookies
+     * @return instância configurada de JwtFilter
+     */
+    @Bean
+    public JwtFilter jwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil) {
+        return new JwtFilter(jwtUtil, cookieUtil);
+    }
+
+    /**
+     * Configuração da cadeia de filtros de segurança.
+     * Usa {@link PublicEndpoints} para centralizar definição de rotas públicas.
      *
      * @param http HttpSecurity do Spring Security
+     * @param jwtFilter filtro customizado de validação JWT
      * @return SecurityFilterChain configurado
      * @throws Exception em caso de erro na configuração
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/api/auth/login",
-                    "/api/auth/logout",
-                    "/api/auth/validate-invite",
-                    "/api/auth/complete-signup",
-                    "/actuator/health"
-                ).permitAll()
-                .anyRequest().authenticated()
+                // Usa a lista centralizada de endpoints públicos
+                .requestMatchers(PublicEndpoints.PUBLIC_ENDPOINTS.toArray(new String[0]))
+                .permitAll()
+                .anyRequest()
+                .authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(authenticationEntryPoint)
@@ -64,14 +78,12 @@ public class SecurityConfig {
     }
 
     /**
-     * Bean para criptografia de senhas usando BCrypt.
-     * BCrypt é recomendado para senhas por ser resistente a ataques de força bruta.
+     * Bean para criptografia de senhas usando BCrypt
      *
-     * @return Instância de PasswordEncoder
+     * @return instância de PasswordEncoder
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

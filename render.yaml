@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: educa-games-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    branch: production
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 10000
+    healthCheckPath: /actuator/health
