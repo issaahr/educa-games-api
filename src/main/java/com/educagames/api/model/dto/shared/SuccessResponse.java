@@ -23,4 +23,5 @@ public class SuccessResponse<T> {
 
     @Schema(description = "Dados resultantes da operação. Pode ser nulo se a operação não retornar dados.")
     private T data;
+
 }

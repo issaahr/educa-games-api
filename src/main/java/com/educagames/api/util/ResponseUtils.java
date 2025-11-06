@@ -32,17 +32,6 @@ public class ResponseUtils {
     }
 
     /**
-     * Retorna uma resposta HTTP 200 OK com os dados fornecidos.
-     *
-     * @param data    os dados opcionais a serem retornados no corpo
-     * @param <T>     tipo do dado retornado
-     * @return ResponseEntity com status 200 OK e corpo SuccessResponse
-     */
-    public static <T> ResponseEntity<SuccessResponse<T>> ok(T data) {
-        return ResponseEntity.ok(new SuccessResponse<>(null, data));
-    }
-
-    /**
      * Retorna uma resposta HTTP 201 Created com a mensagem e os dados fornecidos.
      *
      * @param data    os dados opcionais a serem retornados no corpo
