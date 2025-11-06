@@ -2,6 +2,8 @@ package com.educagames.api.service;
 
 import java.time.LocalDateTime;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,6 @@ import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
