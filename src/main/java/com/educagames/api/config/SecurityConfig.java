@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.educagames.api.filter.JwtFilter;
+import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
 
@@ -40,11 +41,12 @@ public class SecurityConfig {
      *
      * @param jwtUtil utilitário para manipulação e validação de tokens
      * @param cookieUtil utilitário para leitura de cookies
+     * @param customUserDetailsService serviço para carregar detalhes do usuário
      * @return instância configurada de JwtFilter
      */
     @Bean
-    public JwtFilter jwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil) {
-        return new JwtFilter(jwtUtil, cookieUtil);
+    public JwtFilter jwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil, CustomUserDetailsService customUserDetailsService) {
+        return new JwtFilter(jwtUtil, cookieUtil, customUserDetailsService);
     }
 
     /**
