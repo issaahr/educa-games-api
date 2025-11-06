@@ -4,12 +4,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -21,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 
 import com.educagames.api.service.email.EmailTemplate;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -120,10 +120,11 @@ public class EmailService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
+            ResponseEntity<Void> response = restTemplate.exchange(
                 "https://api.resend.com/emails",
+                HttpMethod.POST,
                 request,
-                Map.class
+                Void.class
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {

@@ -1,25 +1,25 @@
 package com.educagames.api.filter;
 
 import java.io.IOException;
-import java.util.List;
+
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.educagames.api.config.CustomUserDetails;
+import com.educagames.api.config.PublicEndpoints;
+import com.educagames.api.exception.JwtExpiredException;
+import com.educagames.api.exception.JwtInvalidException;
+import com.educagames.api.service.CustomUserDetailsService;
+import com.educagames.api.util.CookieUtil;
+import com.educagames.api.util.JwtUtil;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.springframework.lang.NonNull;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.educagames.api.config.PublicEndpoints;
-import com.educagames.api.exception.JwtExpiredException;
-import com.educagames.api.exception.JwtInvalidException;
-import com.educagames.api.util.CookieUtil;
-import com.educagames.api.util.JwtUtil;
 
 /**
  * Filtro responsável por validar o token JWT em cada requisição.
@@ -33,11 +33,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
+    private final CustomUserDetailsService customUserDetailsService;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public JwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil) {
+    public JwtFilter(JwtUtil jwtUtil, CookieUtil cookieUtil, CustomUserDetailsService customUserDetailsService) {
         this.jwtUtil = jwtUtil;
         this.cookieUtil = cookieUtil;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     /**
@@ -75,14 +77,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 jwtUtil.isValid(token);
 
                 Long userId = jwtUtil.getUserId(token);
-                String role = jwtUtil.getRole(token);
+                CustomUserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
-                UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                        userId,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+                );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
 

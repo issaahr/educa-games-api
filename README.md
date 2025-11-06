@@ -40,6 +40,7 @@ API RESTful desenvolvida em Spring Boot para gerenciar uma plataforma de ensino 
 - **Lombok** - Redução de boilerplate
 - **SpringDoc OpenAPI** - Documentação interativa
 - **Dotenv Java** - Gerenciamento de variáveis de ambiente
+- **Flyway** - Migrations de banco de dados
 
 ## Funcionalidades
 
@@ -55,6 +56,10 @@ API RESTful desenvolvida em Spring Boot para gerenciar uma plataforma de ensino 
 - ✅ **Documentação interativa** - Swagger/OpenAPI integrado
 - ✅ **Containerização** - Docker multi-stage otimizado
 - ✅ **Configuração por perfis** - Dev/Prod separados
+- ✅ **Gerenciamento de turmas** - Criação e listagem de turmas por instrutores
+- ✅ **Gerenciamento de instrutores** - Listagem, exclusão e alteração de status (ADMIN)
+- ✅ **Paginação e busca** - Suporte a paginação, ordenação e busca em listagens
+- ✅ **Migrations com Flyway** - Versionamento de schema do banco de dados
 
 ## Configuração de ambiente
 
@@ -116,18 +121,37 @@ docker build -t educagames-api .
 
 Acesse a documentação interativa:
 
-- **Swagger UI**: <http://localhost:8080/swagger-ui.html>
+- **Swagger UI**: <http://localhost:8080/swagger-ui/index.html>
 - **OpenAPI JSON**: <http://localhost:8080/v3/api-docs>
 
 ## Endpoints disponíveis
 
-### 🔐 Autenticação
+### 🔐 Autenticação (`/auth`)
 
-- `POST /api/auth/login` - Login do usuário
-- `POST /api/auth/logout` - Logout do usuário
-- `GET /api/auth/me` - Dados do usuário autenticado
-- `GET /api/auth/validate-invite` - Valida um token de convite
-- `POST /api/auth/complete-signup` - Finaliza cadastro via convite
+- `POST /auth/login` - Login do usuário
+- `POST /auth/logout` - Logout do usuário
+- `GET /auth/me` - Dados do usuário autenticado
+- `GET /auth/validate-invite?token={token}` - Valida um token de convite
+- `POST /auth/complete-signup` - Finaliza cadastro via convite
+
+### 👥 Usuários (`/user`)
+
+- `GET /user/instructors` - Lista instrutores com paginação e busca (ADMIN)
+- `DELETE /user/instructors` - Exclui um instrutor (ADMIN)
+- `PUT /user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
+
+### 📧 Convites (`/invite`)
+
+- `POST /invite/send` - Envia um convite por email (ADMIN/INSTRUCTOR)
+- `GET /invite` - Lista convites com paginação e busca (ADMIN/INSTRUCTOR)
+- `DELETE /invite` - Exclui um convite (ADMIN/INSTRUCTOR)
+- `POST /invite/resend` - Reenvia um convite (ADMIN/INSTRUCTOR)
+
+### 🏫 Turmas (`/classroom`)
+
+- `POST /classroom/create` - Cria uma nova turma (INSTRUCTOR)
+- `GET /classroom/` - Lista turmas do instrutor autenticado (INSTRUCTOR)
+- `GET /classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
 
 ### 🏥 Monitoramento
 
@@ -135,8 +159,8 @@ Acesse a documentação interativa:
 
 ### 📚 Documentação
 
-- `GET /swagger-ui.html` - Interface Swagger
-- `GET /v3/api-docs` - Especificação OpenAPI
+- `GET /swagger-ui/**` - Interface Swagger UI
+- `GET /v3/api-docs/**` - Especificação OpenAPI
 
 ## Arquitetura
 
@@ -155,15 +179,16 @@ Acesse a documentação interativa:
 
 ### Camadas da aplicação
 
-- **Controller** - Endpoints REST (AuthController)
-- **Service** - Lógica de negócio (AuthService, InviteService, EmailService)
-- **Repository** - Acesso a dados (UserRepository, InviteRepository)
-- **Entity** - Modelo de dados (User, Invite, BaseEntity)
-- **DTO** - Transferência de dados (LoginRequestDTO, UserProfileDTO, etc.)
+- **Controller** - Endpoints REST (AuthController, UserController, InviteController, ClassroomController)
+- **Service** - Lógica de negócio (AuthService, UserService, InviteService, ClassroomService, EmailService)
+- **Repository** - Acesso a dados (UserRepository, InviteRepository, ClassroomRepository)
+- **Entity** - Modelo de dados (User, Invite, Classroom, StudentClassroom, BaseEntity)
+- **DTO** - Transferência de dados (LoginRequestDTO, UserProfileDTO, InviteDTO, ClassroomDTO, etc.)
 - **Filter** - Interceptação de requests (JwtFilter)
 - **Config** - Configurações da aplicação (SecurityConfig, CorsConfig)
 - **Exception** - Tratamento personalizado de erros
 - **Util** - Utilitários (JwtUtil, CookieUtil, ResponseUtils)
+- **Seed** - Inicialização de dados (DatabaseSeeder)
 
 ## Desenvolvimento
 
@@ -205,6 +230,8 @@ src/
 │   └── resources/
 │       ├── templates/       # Templates de email HTML
 │       │   └── emails/
+│       ├── db/             # Migrations do Flyway
+│       │   └── migration/
 │       ├── application.properties
 │       ├── application-dev.properties
 │       └── application-prod.properties
@@ -214,7 +241,16 @@ src/
 ### 🔧 Configurações por perfil
 
 - **dev**: Desenvolvimento local, logs detalhados, ddl-auto=update
-- **prod**: Produção, logs mínimos, ddl-auto=none, cookies seguros
+- **prod**: Produção, logs mínimos, ddl-auto=validate, cookies seguros, Flyway habilitado
+
+### 🗄️ Migrations do Banco de Dados
+
+O projeto utiliza **Flyway** para versionamento do schema do banco de dados. As migrations estão localizadas em `src/main/resources/db/migration/`:
+
+- `V1__Initial_schema.sql` - Schema inicial (tabelas: users, classrooms, student_classes, invites)
+- `V2__Insert_initial_admin.sql` - Criação do usuário admin inicial
+
+As migrations são executadas automaticamente na inicialização da aplicação em produção.
 
 ### 📧 Sistema de Convites
 

@@ -2,6 +2,7 @@ package com.educagames.api.filter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,12 +14,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,10 +24,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.exception.JwtExpiredException;
 import com.educagames.api.exception.JwtInvalidException;
+import com.educagames.api.model.entity.User;
+import com.educagames.api.model.enums.Role;
+import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class JwtFilterTest {
@@ -42,6 +47,9 @@ class JwtFilterTest {
 
     @Mock
     private CookieUtil cookieUtil;
+
+    @Mock
+    private CustomUserDetailsService customUserDetailsService;
 
     @Mock
     private HttpServletRequest request;
@@ -61,7 +69,7 @@ class JwtFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtFilter = new JwtFilter(jwtUtil, cookieUtil);
+        jwtFilter = new JwtFilter(jwtUtil, cookieUtil, customUserDetailsService);
         SecurityContextHolder.clearContext();
     }
 
@@ -69,7 +77,7 @@ class JwtFilterTest {
     @DisplayName("Deve permitir acesso a URLs públicas sem filtrar")
     void whenRequestToPublicUrl_shouldNotFilter() {
         // Given
-        when(request.getRequestURI()).thenReturn("/api/auth/login");
+        when(request.getRequestURI()).thenReturn("/auth/login");
 
         // When
         boolean shouldNotFilter = jwtFilter.shouldNotFilter(request);
@@ -82,7 +90,7 @@ class JwtFilterTest {
     @DisplayName("Deve filtrar URLs privadas")
     void whenRequestToPrivateUrl_shouldFilter() {
         // Given
-        when(request.getRequestURI()).thenReturn("/api/private/endpoint");
+        when(request.getRequestURI()).thenReturn("/private/endpoint");
 
         // When
         boolean shouldNotFilter = jwtFilter.shouldNotFilter(request);
@@ -134,19 +142,30 @@ class JwtFilterTest {
     @DisplayName("Deve autenticar usuário com token válido no cookie")
     void whenValidTokenInCookie_shouldAuthenticateUser() throws ServletException, IOException {
         // Given
-        Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
+        User testUser = User.builder()
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(TEST_USER_ID);
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+
+        Cookie[] cookies = {new Cookie("auth_token", VALID_TOKEN)};
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
+        when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
         jwtFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertEquals(TEST_USER_ID, auth.getPrincipal());
+        assertInstanceOf(CustomUserDetails.class, auth.getPrincipal());
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        assertEquals(TEST_USER_ID, principal.getUser().getId());
         assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_" + TEST_ROLE)));
         verify(filterChain).doFilter(request, response);
     }
@@ -171,7 +190,7 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token é inválido")
     void whenInvalidToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
-        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        Cookie[] cookies = {new Cookie("auth_token", INVALID_TOKEN)};
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtInvalidException jwtException = new JwtInvalidException("Token inválido");
@@ -190,7 +209,7 @@ class JwtFilterTest {
     @DisplayName("Deve limpar contexto de segurança quando token está expirado")
     void whenExpiredToken_shouldClearSecurityContext() throws ServletException, IOException {
         // Given
-        Cookie[] cookies = {new Cookie("authToken", INVALID_TOKEN)};
+        Cookie[] cookies = {new Cookie("auth_token", INVALID_TOKEN)};
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(INVALID_TOKEN);
         JwtExpiredException jwtException = new JwtExpiredException("Token expirado");

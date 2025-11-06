@@ -9,8 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.AfterEach;
@@ -28,9 +26,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
+import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.service.AuthService;
 import com.educagames.api.util.CookieUtil;
@@ -100,16 +100,26 @@ class AuthControllerTest {
     void whenAuthenticatedUserCallsMe_shouldReturnUserProfile() {
         // Arrange
         Long userId = 1L;
-        // Atualiza a criação do DTO para incluir a role
+        User testUser = User.builder()
+            .name("Test User")
+            .email("test@email.com")
+            .password("encodedPassword")
+            .role(Role.INSTRUCTOR)
+            .active(true)
+            .build();
+        testUser.setId(userId);
+
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
         UserProfileDTO userProfile = new UserProfileDTO(userId, "Test User", Role.INSTRUCTOR);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         when(authService.getUserProfile(userId)).thenReturn(userProfile);
 
         // Act
-        ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me(userId);
+        ResponseEntity<SuccessResponse<UserProfileDTO>> response = authController.me(userDetails);
 
         // Assert
         assertNotNull(response);

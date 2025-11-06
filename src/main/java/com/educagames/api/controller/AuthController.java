@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
-import com.educagames.api.model.dto.auth.InviteDetailsDTO;
+import com.educagames.api.model.dto.auth.InviteDetailsResponseDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
@@ -33,7 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @Tag(name = "Autenticação", description = "Endpoints para gerenciamento de autenticação")
 @RequiredArgsConstructor
 public class AuthController {
@@ -61,8 +62,8 @@ public class AuthController {
                             examples = @ExampleObject(value = "{\"message\": \"Convite já utilizado.\", \"errors\": null}")))
     })
     @GetMapping("/validate-invite")
-    public ResponseEntity<SuccessResponse<InviteDetailsDTO>> validateInvite(@RequestParam("token") String token) {
-        InviteDetailsDTO inviteDetails = authService.validateInvite(token);
+    public ResponseEntity<SuccessResponse<InviteDetailsResponseDTO>> validateInvite(@RequestParam("token") String token) {
+        InviteDetailsResponseDTO inviteDetails = authService.validateInvite(token);
         return ResponseUtils.ok(inviteDetails, "Convite válido");
     }
 
@@ -109,8 +110,8 @@ public class AuthController {
                             examples = @ExampleObject(value = "{\"message\": \"Usuário não autenticado\", \"errors\": null}")))
     })
     @GetMapping("/me")
-    public ResponseEntity<SuccessResponse<UserProfileDTO>> me(@AuthenticationPrincipal Long userId) {
-        UserProfileDTO userProfile = authService.getUserProfile(userId);
+    public ResponseEntity<SuccessResponse<UserProfileDTO>> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserProfileDTO userProfile = authService.getUserProfile(userDetails.getUser().getId());
         return ResponseUtils.ok(userProfile, "Dados do usuário obtidos com sucesso");
     }
 
