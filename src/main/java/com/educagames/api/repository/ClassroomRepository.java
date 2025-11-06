@@ -15,4 +15,6 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
 
     @EntityGraph(attributePaths = {"students", "students.student"})
     Optional<Classroom> findByIdAndInstructorId(Long id, Long instructorId);
+
+    Optional<Classroom> findOneByIdAndInstructorId(Long id, Long instructorId);
 }

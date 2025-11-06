@@ -2,10 +2,8 @@ package com.educagames.api.service;
 
 import java.util.List;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.exception.NotFoundException;
 import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.ClassroomDetailsDTO;
@@ -22,13 +20,18 @@ import lombok.RequiredArgsConstructor;
 public class ClassroomService {
 
     private final ClassroomRepository classroomRepository;
+    private final AuthService authService;
 
+    /**
+     * Cria uma nova turma associada ao instrutor autenticado.
+     * <p>
+     * A turma é criada com status ativo e vinculada ao instrutor logado.
+     * </p>
+     *
+     * @param dto DTO contendo o nome da turma a ser criada
+     */
     public void createClass(CreateClassRequestDTO dto) {
-        // @PreAuthorize no controller garante que o usuário está autenticado e é INSTRUCTOR
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-            .getAuthentication()
-            .getPrincipal();
-        User instructor = userDetails.getUser();
+        User instructor = authService.getAuthenticatedUser();
 
         Classroom classroom = new Classroom();
         classroom.setName(dto.getName());
@@ -37,11 +40,16 @@ public class ClassroomService {
         classroomRepository.save(classroom);
     }
 
+    /**
+     * Lista todas as turmas do instrutor autenticado.
+     * <p>
+     * Retorna apenas as turmas pertencentes ao instrutor logado.
+     * </p>
+     *
+     * @return lista de turmas convertidas para DTO
+     */
     public List<ClassroomDTO> listClasses (){
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-            .getAuthentication()
-            .getPrincipal();
-        User instructor = userDetails.getUser();
+        User instructor = authService.getAuthenticatedUser();
 
         List<Classroom> classes = classroomRepository.findByInstructorId(instructor.getId());
 
@@ -56,11 +64,19 @@ public class ClassroomService {
             .toList();
     }
 
+    /**
+     * Obtém os detalhes completos de uma turma específica.
+     * <p>
+     * Verifica se a turma pertence ao instrutor autenticado antes de retornar.
+     * Inclui informações sobre os alunos da turma.
+     * </p>
+     *
+     * @param id ID da turma a ser consultada
+     * @return detalhes da turma incluindo lista de alunos
+     * @throws NotFoundException se a turma não for encontrada ou não pertencer ao instrutor
+     */
     public ClassroomDetailsDTO getClassById(Long id){
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-            .getAuthentication()
-            .getPrincipal();
-        User instructor = userDetails.getUser();
+        User instructor = authService.getAuthenticatedUser();
 
         Classroom classroom = classroomRepository.findByIdAndInstructorId(id, instructor.getId())
             .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
@@ -72,7 +88,16 @@ public class ClassroomService {
         return dto;
     }
 
-    private List<StudentClassroomDTO> getClassStudents(Classroom classroom){
+    /**
+     * Obtém os alunos da turma.
+     * <p>
+     * Converte a lista de alunos para o DTO.
+     * </p>
+     *
+     * @param classroom Turma a ser consultada
+     * @return lista de alunos convertidos para DTO
+     */
+    private List<StudentClassroomDTO> getClassStudents(Classroom classroom) {
         return classroom.getStudents().stream()
             .map(student -> {
                 StudentClassroomDTO dto = new StudentClassroomDTO();
