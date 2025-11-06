@@ -126,32 +126,32 @@ Acesse a documentação interativa:
 
 ## Endpoints disponíveis
 
-### 🔐 Autenticação (`/api/auth`)
+### 🔐 Autenticação (`/auth`)
 
-- `POST /api/auth/login` - Login do usuário
-- `POST /api/auth/logout` - Logout do usuário
-- `GET /api/auth/me` - Dados do usuário autenticado
-- `GET /api/auth/validate-invite?token={token}` - Valida um token de convite
-- `POST /api/auth/complete-signup` - Finaliza cadastro via convite
+- `POST /auth/login` - Login do usuário
+- `POST /auth/logout` - Logout do usuário
+- `GET /auth/me` - Dados do usuário autenticado
+- `GET /auth/validate-invite?token={token}` - Valida um token de convite
+- `POST /auth/complete-signup` - Finaliza cadastro via convite
 
-### 👥 Usuários (`/api/user`)
+### 👥 Usuários (`/user`)
 
-- `GET /api/user/instructors` - Lista instrutores com paginação e busca (ADMIN)
-- `DELETE /api/user/instructors` - Exclui um instrutor (ADMIN)
-- `PUT /api/user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
+- `GET /user/instructors` - Lista instrutores com paginação e busca (ADMIN)
+- `DELETE /user/instructors` - Exclui um instrutor (ADMIN)
+- `PUT /user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
 
-### 📧 Convites (`/api/invite`)
+### 📧 Convites (`/invite`)
 
-- `POST /api/invite/send` - Envia um convite por email (ADMIN/INSTRUCTOR)
-- `GET /api/invite` - Lista convites com paginação e busca (ADMIN/INSTRUCTOR)
-- `DELETE /api/invite` - Exclui um convite (ADMIN/INSTRUCTOR)
-- `POST /api/invite/resend` - Reenvia um convite (ADMIN/INSTRUCTOR)
+- `POST /invite/send` - Envia um convite por email (ADMIN/INSTRUCTOR)
+- `GET /invite` - Lista convites com paginação e busca (ADMIN/INSTRUCTOR)
+- `DELETE /invite` - Exclui um convite (ADMIN/INSTRUCTOR)
+- `POST /invite/resend` - Reenvia um convite (ADMIN/INSTRUCTOR)
 
-### 🏫 Turmas (`/api/classroom`)
+### 🏫 Turmas (`/classroom`)
 
-- `POST /api/classroom/create` - Cria uma nova turma (INSTRUCTOR)
-- `GET /api/classroom/` - Lista turmas do instrutor autenticado (INSTRUCTOR)
-- `GET /api/classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
+- `POST /classroom/create` - Cria uma nova turma (INSTRUCTOR)
+- `GET /classroom/` - Lista turmas do instrutor autenticado (INSTRUCTOR)
+- `GET /classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
 
 ### 🏥 Monitoramento
 

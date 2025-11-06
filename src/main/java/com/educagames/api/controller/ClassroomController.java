@@ -32,7 +32,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/classroom")
+@RequestMapping("/classroom")
 @Tag(name = "Turmas", description = "Endpoints para gerenciamento de turmas")
 @RequiredArgsConstructor
 public class ClassroomController {

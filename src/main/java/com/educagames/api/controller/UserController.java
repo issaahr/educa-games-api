@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 @Tag(name = "Usuários", description = "Endpoints para gerenciamento de usuários e instrutores")
 public class UserController {

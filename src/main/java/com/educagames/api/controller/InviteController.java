@@ -34,7 +34,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/invite")
+@RequestMapping("/invite")
 @RequiredArgsConstructor
 @Tag(name = "Convites", description = "Endpoints para gerenciamento de convites")
 public class InviteController {

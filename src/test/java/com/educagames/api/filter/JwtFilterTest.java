@@ -77,7 +77,7 @@ class JwtFilterTest {
     @DisplayName("Deve permitir acesso a URLs públicas sem filtrar")
     void whenRequestToPublicUrl_shouldNotFilter() {
         // Given
-        when(request.getRequestURI()).thenReturn("/api/auth/login");
+        when(request.getRequestURI()).thenReturn("/auth/login");
 
         // When
         boolean shouldNotFilter = jwtFilter.shouldNotFilter(request);
@@ -90,7 +90,7 @@ class JwtFilterTest {
     @DisplayName("Deve filtrar URLs privadas")
     void whenRequestToPrivateUrl_shouldFilter() {
         // Given
-        when(request.getRequestURI()).thenReturn("/api/private/endpoint");
+        when(request.getRequestURI()).thenReturn("/private/endpoint");
 
         // When
         boolean shouldNotFilter = jwtFilter.shouldNotFilter(request);

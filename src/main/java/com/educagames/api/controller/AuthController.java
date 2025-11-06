@@ -34,7 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @Tag(name = "Autenticação", description = "Endpoints para gerenciamento de autenticação")
 @RequiredArgsConstructor
 public class AuthController {
