@@ -46,30 +46,41 @@ public class DatabaseSeeder {
     }
 
     /**
-     * Obtém ou cria o usuário admin inicial.
+     * Obtém ou cria o usuário admin inicial e atualiza sua senha.
      * <p>
      * Busca um usuário admin com email "admin@educagames.com". Se não existir,
      * cria um novo usuário admin com a senha configurada em {@code admin.password}.
+     * Se existir com senha temporária (da migration), atualiza para a senha configurada.
      * </p>
      * <p>
      * Este método facilita o setup inicial do ambiente de desenvolvimento e produção.
+     * A migration V2 cria o admin com senha temporária, e este seeder atualiza para a senha real.
      * Após o primeiro acesso, o admin pode criar outros admins através do painel se necessário.
      * </p>
      */
     private void getOrCreateAdminSender() {
-        userRepository.findByEmail("admin@educagames.com")
+        User admin = userRepository.findByEmail("admin@educagames.com")
             .orElseGet(() -> {
                 log.info("Criando usuário admin inicial...");
-                User admin = User.builder()
+                User newAdmin = User.builder()
                     .name("Admin Educagames")
                     .email("admin@educagames.com")
                     .password(passwordEncoder.encode(adminPassword))
                     .role(Role.ADMIN)
                     .active(true)
                     .build();
-                admin = userRepository.save(admin);
-                log.info("Usuário admin criado com ID: {}", admin.getId());
-                return admin;
+                newAdmin = userRepository.save(newAdmin);
+                log.info("Usuário admin criado com ID: {}", newAdmin.getId());
+                return newAdmin;
             });
+
+        // Atualiza a senha se for a temporária da migration
+        String tempPasswordPrefix = "$2a$10$TEMP.PASSWORD.WILL.BE.UPDATED.BY.SEEDER";
+        if (admin.getPassword().startsWith(tempPasswordPrefix)) {
+            log.info("Atualizando senha temporária do admin...");
+            admin.setPassword(passwordEncoder.encode(adminPassword));
+            userRepository.save(admin);
+            log.info("Senha do admin atualizada com sucesso");
+        }
     }
 }
