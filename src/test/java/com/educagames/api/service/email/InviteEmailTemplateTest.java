@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,6 +45,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar template configurado quando withData é chamado")
     void whenWithData_shouldReturnConfiguredTemplate() {
         // When
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
@@ -66,6 +68,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar template configurado mesmo com valores null")
     void whenWithDataWithNullValues_shouldReturnConfiguredTemplate() {
         // When
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(null, null, 0);
@@ -80,6 +83,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar subject correto do template")
     void whenGetSubject_shouldReturnCorrectSubject() {
         // When
         String subject = inviteEmailTemplate.getSubject();
@@ -89,6 +93,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar texto formatado com dados quando getTextBody é chamado")
     void whenGetTextBody_shouldReturnFormattedTextWithData() {
         // Given
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
@@ -111,6 +116,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar texto formatado mesmo com zero horas de expiração")
     void whenGetTextBodyWithZeroHours_shouldReturnFormattedText() {
         // Given
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
@@ -128,6 +134,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar HTML processado quando template é válido")
     void whenGetHtmlBodyWithValidTemplate_shouldReturnProcessedHtml() throws IOException {
         // Given
         String mockHtmlContent = """
@@ -164,6 +171,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve substituir todos os placeholders corretamente no HTML")
     void whenGetHtmlBodyWithAllPlaceholders_shouldReplaceAllCorrectly() throws IOException {
         // Given
         String mockHtmlContent = """
@@ -203,6 +211,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve lançar EmailTemplateLoadException quando há IOException ao carregar template")
     void whenGetHtmlBodyWithIOException_shouldThrowEmailTemplateLoadException() throws IOException {
         // Given
         when(htmlTemplate.getContentAsString(StandardCharsets.UTF_8))
@@ -228,6 +237,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve substituir placeholders com strings vazias quando valores são vazios")
     void whenGetHtmlBodyWithEmptyValues_shouldReplaceWithEmptyStrings() throws IOException {
         // Given
         String mockHtmlContent = """
@@ -260,6 +270,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve retornar conteúdo original quando não há placeholders no template")
     void whenGetHtmlBodyWithNoPlaceholders_shouldReturnOriginalContent() throws IOException {
         // Given
         String mockHtmlContent = "<html><body><h1>Sem placeholders</h1></body></html>";
@@ -280,6 +291,7 @@ class InviteEmailTemplateTest {
     }
 
     @Test
+    @DisplayName("Deve tratar graciosamente quando link está vazio no texto")
     void whenGetTextBodyWithEmptyLink_shouldHandleGracefully() {
         // Given
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData("", "", 12);

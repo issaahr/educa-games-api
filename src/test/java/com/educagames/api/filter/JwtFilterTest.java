@@ -1,6 +1,10 @@
 package com.educagames.api.filter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -9,12 +13,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +32,12 @@ import com.educagames.api.model.enums.Role;
 import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class JwtFilterTest {
@@ -150,7 +154,6 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
         when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
@@ -178,13 +181,12 @@ class JwtFilterTest {
         testUser.setId(TEST_USER_ID);
         CustomUserDetails userDetails = new CustomUserDetails(testUser);
 
-        Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
+        Cookie[] cookies = {new Cookie("auth_token", VALID_TOKEN)};
         when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
         when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
@@ -282,7 +284,6 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + headerToken);
         doNothing().when(jwtUtil).isValid(headerToken);
         when(jwtUtil.getUserId(headerToken)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(headerToken)).thenReturn(TEST_ROLE);
         when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
@@ -310,13 +311,12 @@ class JwtFilterTest {
         testUser.setId(TEST_USER_ID);
         CustomUserDetails userDetails = new CustomUserDetails(testUser);
 
-        Cookie[] cookies = {new Cookie("authToken", VALID_TOKEN)};
+        Cookie[] cookies = {new Cookie("auth_token", VALID_TOKEN)};
         when(request.getHeader("Authorization")).thenReturn("");
         when(request.getCookies()).thenReturn(cookies);
         when(cookieUtil.getTokenFromCookie(cookies)).thenReturn(VALID_TOKEN);
         doNothing().when(jwtUtil).isValid(VALID_TOKEN);
         when(jwtUtil.getUserId(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(jwtUtil.getRole(VALID_TOKEN)).thenReturn(TEST_ROLE);
         when(customUserDetailsService.loadUserById(TEST_USER_ID)).thenReturn(userDetails);
 
         // When
