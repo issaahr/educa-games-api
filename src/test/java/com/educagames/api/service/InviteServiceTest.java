@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -117,7 +118,8 @@ class InviteServiceTest {
             }
             return invite;
         });
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt(), any(Role.class), isNull()))
+            .thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.createInvite(instructorInviteRequest, null);
@@ -140,7 +142,8 @@ class InviteServiceTest {
             }
             return invite;
         });
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt(), any(Role.class), isNull()))
+            .thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.createInvite(studentInviteRequest, 1L);
@@ -269,7 +272,8 @@ class InviteServiceTest {
 
         when(inviteRepository.findById(eq(1L))).thenReturn(Optional.of(invite));
         when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt(), any(Role.class), isNull()))
+            .thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.resendInvite(1L);

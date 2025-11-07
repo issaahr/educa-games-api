@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,12 +22,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.core.io.ResourceLoader;
 
 import com.educagames.api.exception.EmailTemplateLoadException;
+import com.educagames.api.model.enums.Role;
 
 @ExtendWith(MockitoExtension.class)
 class InviteEmailTemplateTest {
+
+    @Mock
+    private ResourceLoader resourceLoader;
 
     @Mock
     private Resource htmlTemplate;
@@ -40,8 +45,8 @@ class InviteEmailTemplateTest {
 
     @BeforeEach
     void setUp() {
-        // Injeta o mock do Resource no campo htmlTemplate
-        ReflectionTestUtils.setField(inviteEmailTemplate, "htmlTemplate", htmlTemplate);
+        // Configura o ResourceLoader para retornar o mock do Resource
+        when(resourceLoader.getResource(anyString())).thenReturn(htmlTemplate);
     }
 
     @Test
@@ -51,7 +56,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // Then
@@ -71,7 +78,7 @@ class InviteEmailTemplateTest {
     @DisplayName("Deve retornar template configurado mesmo com valores null")
     void whenWithDataWithNullValues_shouldReturnConfiguredTemplate() {
         // When
-        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(null, null, 0);
+        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(null, null, 0, Role.INSTRUCTOR, null);
 
         // Then
         assertNotNull(configuredTemplate);
@@ -99,7 +106,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When
@@ -122,7 +131,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            0
+            0,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When
@@ -152,7 +163,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When
@@ -190,7 +203,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When
@@ -220,7 +235,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When & Then
@@ -229,7 +246,7 @@ class InviteEmailTemplateTest {
             configuredTemplate::getHtmlBody
         );
 
-        assertEquals("Erro ao carregar template de email: inviteInstructorEmail.html", exception.getMessage());
+        assertEquals("Erro ao carregar template de email", exception.getMessage());
         assertInstanceOf(IOException.class, exception.getCause());
         assertEquals("Arquivo não encontrado", exception.getCause().getMessage());
 
@@ -252,7 +269,7 @@ class InviteEmailTemplateTest {
 
         when(htmlTemplate.getContentAsString(StandardCharsets.UTF_8)).thenReturn(mockHtmlContent);
 
-        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData("", "", 0);
+        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData("", "", 0, Role.INSTRUCTOR, null);
 
         // When
         String htmlBody = configuredTemplate.getHtmlBody();
@@ -279,7 +296,9 @@ class InviteEmailTemplateTest {
         InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
             TEST_INVITE_LINK,
             TEST_LOGO_URL,
-            TEST_EXPIRATION_HOURS
+            TEST_EXPIRATION_HOURS,
+            Role.INSTRUCTOR,
+            null
         );
 
         // When
@@ -294,7 +313,7 @@ class InviteEmailTemplateTest {
     @DisplayName("Deve tratar graciosamente quando link está vazio no texto")
     void whenGetTextBodyWithEmptyLink_shouldHandleGracefully() {
         // Given
-        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData("", "", 12);
+        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData("", "", 12, Role.INSTRUCTOR, null);
 
         // When
         String textBody = configuredTemplate.getTextBody();
@@ -305,6 +324,45 @@ class InviteEmailTemplateTest {
         assertTrue(textBody.contains("Este link é válido por 12 horas"));
         // Verifica se a string vazia está presente no local do link
         assertTrue(textBody.contains("\n\n"));
+    }
+
+    @Test
+    @DisplayName("Deve usar template de estudante quando role é STUDENT")
+    void whenRoleIsStudent_shouldUseStudentTemplate() throws IOException {
+        // Given
+        String mockHtmlContent = """
+            <html>
+                <body>
+                    <p>Você foi convidado para ingressar na turma {{className}}.</p>
+                    <a href="{{inviteLink}}">Clique aqui</a>
+                </body>
+            </html>
+            """;
+
+        when(resourceLoader.getResource("classpath:templates/emails/inviteStudentEmail.html"))
+            .thenReturn(htmlTemplate);
+        when(htmlTemplate.getContentAsString(StandardCharsets.UTF_8)).thenReturn(mockHtmlContent);
+
+        InviteEmailTemplate configuredTemplate = inviteEmailTemplate.withData(
+            TEST_INVITE_LINK,
+            TEST_LOGO_URL,
+            TEST_EXPIRATION_HOURS,
+            Role.STUDENT,
+            "Turma de Matemática"
+        );
+
+        // When
+        String htmlBody = configuredTemplate.getHtmlBody();
+        String textBody = configuredTemplate.getTextBody();
+
+        // Then
+        assertNotNull(htmlBody);
+        assertTrue(htmlBody.contains("Turma de Matemática"));
+        assertTrue(htmlBody.contains(TEST_INVITE_LINK));
+        assertFalse(htmlBody.contains("{{className}}"));
+        
+        assertNotNull(textBody);
+        assertTrue(textBody.contains("Você foi convidado para ingressar na turma Turma de Matemática."));
     }
 
 }
