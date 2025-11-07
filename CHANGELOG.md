@@ -27,3 +27,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Sem alterações no banco de dados.
 - Sem breaking changes.
 - Apenas redeploy foi necessário.
+-
+Para documentação detalhada, consulte [docs/release-notes/v1.0.1.md](docs/release-notes/v1.0.1.md).
+
+---
+
+[1.0.1]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.1
