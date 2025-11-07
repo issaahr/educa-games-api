@@ -62,10 +62,15 @@ public class AuthService {
 
         validateInvite(invite);
 
-        return InviteDetailsResponseDTO.builder()
-                .type(invite.getRole())
-                .email(invite.getEmail())
-                .build();
+        InviteDetailsResponseDTO.InviteDetailsResponseDTOBuilder builder = InviteDetailsResponseDTO.builder()
+            .type(invite.getRole())
+            .email(invite.getEmail());
+
+        if (invite.getClassName() != null) {
+            builder.className(invite.getClassName());
+        }
+
+        return builder.build();
     }
 
     /**

@@ -22,4 +22,7 @@ public class InviteDetailsResponseDTO {
     @JsonProperty("role")
     private Role type;
 
+    @Schema(description = "Nome da turma", example = "Turma de Java")
+    private String className;
+
 }
