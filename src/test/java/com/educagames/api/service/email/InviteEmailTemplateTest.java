@@ -229,7 +229,7 @@ class InviteEmailTemplateTest {
             configuredTemplate::getHtmlBody
         );
 
-        assertEquals("Erro ao carregar template de email: inviteEmail.html", exception.getMessage());
+        assertEquals("Erro ao carregar template de email: inviteInstructorEmail.html", exception.getMessage());
         assertInstanceOf(IOException.class, exception.getCause());
         assertEquals("Arquivo não encontrado", exception.getCause().getMessage());
 

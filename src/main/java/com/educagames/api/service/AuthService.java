@@ -2,6 +2,9 @@ package com.educagames.api.service;
 
 import java.time.LocalDateTime;
 
+import com.educagames.api.model.entity.StudentClassroom;
+import com.educagames.api.model.enums.Role;
+import com.educagames.api.repository.StudentClassroomRepository;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +41,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
+    private final StudentClassroomRepository studentClassroomRepository;
 
     /**
      * Valida um token de convite e retorna seus detalhes.
@@ -95,34 +99,85 @@ public class AuthService {
      *
      * @param request DTO contendo o token do convite, nome e senha do usuário
      * @throws BadRequestException  se o convite não for encontrado ou estiver inválido
-     * @throws ConflictException   se o convite já foi utilizado ou já existe usuário com o email
-     * @throws InviteExpiredException se o convite expirou
      */
     @Transactional
     public void completeSignup(CompleteSignupRequest request) {
         Invite invite = inviteRepository.findByToken(request.getInvite())
-                .orElseThrow(() -> new BadRequestException("Convite inválido ou expirado"));
+            .orElseThrow(() -> new BadRequestException("Convite inválido ou expirado"));
 
         validateInvite(invite);
 
-        if (userRepository.findByEmail(invite.getEmail()).isPresent()) {
-            throw new ConflictException("Já existe um usuário cadastrado com este email");
+        // Busca usuário existente ou cria novo
+        User user = findOrCreateUser(invite, request);
+
+        // Se for estudante, vincula à turma
+        if (invite.getRole() == Role.STUDENT && invite.getClassroom() != null) {
+            createEnrollment(user, invite);
         }
-
-        User newUser = User.builder()
-                .name(request.getName())
-                .email(invite.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(invite.getRole())
-                .active(true)
-                .build();
-
-        userRepository.save(newUser);
 
         invite.setStatus(InviteStatus.ACCEPTED);
         invite.setAcceptedAt(LocalDateTime.now());
-
         inviteRepository.save(invite);
+    }
+
+    /**
+     * Busca usuário existente ou cria novo conforme o role do convite.
+     * <p>
+     * - Para INSTRUCTOR: se usuário já existe, lança exceção
+     * - Para STUDENT: se usuário já existe, retorna o existente (não cria novo)
+     * - Se usuário não existe, cria
+     * @return o usuário criado ou encontrado
+     * @throws ConflictException   se o convite já foi utilizado ou já existe usuário com o email
+     * </p>
+     */
+    private User findOrCreateUser(Invite invite, CompleteSignupRequest request) {
+        User existingUser = userRepository.findByEmail(invite.getEmail()).orElse(null);
+
+        // Se não é STUDENT e usuário já existe, erro
+        if (invite.getRole() != Role.STUDENT && existingUser != null) {
+            throw new ConflictException("Já existe um usuário cadastrado com este email");
+        }
+
+        // Se é STUDENT e usuário já existe, retorna o existente
+        if (invite.getRole() == Role.STUDENT && existingUser != null) {
+            return existingUser;
+        }
+
+        // Caso contrário, cria novo usuário
+        User newUser = User.builder()
+            .name(request.getName())
+            .email(invite.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .role(invite.getRole())
+            .active(true)
+            .build();
+
+        return userRepository.save(newUser);
+    }
+
+    /**
+     * Vincula um estudante à uma turma.
+     * @param user estudante a ser matriculado
+     * @param invite convite recebido pelo estudante
+     */
+    private void createEnrollment(User user, Invite invite){
+        if (studentClassroomRepository.existsByStudentIdAndClassroomId(
+            user.getId(), invite.getClassroom().getId())) {
+            throw new ConflictException("Aluno já está vinculado a esta turma");
+        }
+
+        Long classroomId = invite.getClassroom().getId();
+        long count = studentClassroomRepository.countByClassroomId(classroomId);
+        String enrollment = String.format("%01d", count + 1);
+
+        StudentClassroom studentClassroom = StudentClassroom.builder()
+            .student(user)
+            .classroom(invite.getClassroom())
+            .enrollment(enrollment)
+            .active(true)
+            .build();
+
+        studentClassroomRepository.save(studentClassroom);
     }
 
     /**

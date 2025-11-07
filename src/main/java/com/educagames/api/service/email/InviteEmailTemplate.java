@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class InviteEmailTemplate implements EmailTemplate {
 
-    @Value("classpath:templates/emails/inviteEmail.html")
+    @Value("classpath:templates/emails/inviteInstructorEmail.html")
     private Resource htmlTemplate;
 
     private String inviteLink;
@@ -55,7 +55,7 @@ public class InviteEmailTemplate implements EmailTemplate {
                     .replace("{{logoUrl}}", logoUrl)
                     .replace("{{expirationHours}}", String.valueOf(expirationHours));
         } catch (IOException e) {
-            throw new EmailTemplateLoadException("Erro ao carregar template de email: inviteEmail.html", e);
+            throw new EmailTemplateLoadException("Erro ao carregar template de email: inviteInstructorEmail.html", e);
         }
     }
 
