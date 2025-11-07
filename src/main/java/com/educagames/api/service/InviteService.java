@@ -55,22 +55,28 @@ public class InviteService {
      * O status do convite é atualizado para AWAITING_ACCEPTANCE se o envio for bem-sucedido.
      * Convites com falha no envio permanecerão como NOT_SENT para reprocessamento.
      * </p>
-     *
-     * @param inviteToCreate DTO contendo email do destinatário e opcionalmente
-     *                       o id da classe a ser convidada
+     * <p>
+     * ADMIN pode criar convites de INSTRUCTOR (classroomId deve ser null).
+     * INSTRUCTOR pode criar convites de STUDENT (classroomId é obrigatório).
+     * </p>
+     * @param inviteToCreate DTO contendo email do destinatário
+     * @param classroomId ID da turma (obrigatório para INSTRUCTOR, null para ADMIN)
+     * @throws ConflictException se já existe um convite pendente para o email
+     * @throws BadRequestException se INSTRUCTOR não informar classroomId
+     * @throws NotFoundException se a turma não for encontrada ou não pertencer ao instrutor
      */
     @Transactional
-    public void createInvite(CreateInviteRequestDTO inviteToCreate) {
+    public void createInvite(CreateInviteRequestDTO inviteToCreate, Long classroomId) {
         CustomUserDetails userDetails = authService.getAuthenticatedUserDetails();
         User sender = userDetails.getUser();
         Role senderRole = sender.getRole();
         String token = UUID.randomUUID().toString();
 
-        if(checkEmailInviteExists(inviteToCreate.getEmail(), senderRole)){
+        if(checkEmailInviteExists(inviteToCreate.getEmail(), senderRole, classroomId)){
             throw new ConflictException("Já existe um convite para este email");
         }
 
-        if(senderRole == Role.INSTRUCTOR && inviteToCreate.getClassroomId() == null){
+        if(senderRole == Role.INSTRUCTOR && classroomId == null){
             throw new BadRequestException("Não foi possível encontrar a turma informada");
         }
 
@@ -82,11 +88,11 @@ public class InviteService {
             .resendCount(0)
             .sender(sender);
 
-        Role inviteRole = inviteToCreate.getClassroomId() != null ? Role.STUDENT : Role.INSTRUCTOR;
+        Role inviteRole = classroomId != null ? Role.STUDENT : Role.INSTRUCTOR;
         builder.role(inviteRole);
 
         if(inviteRole == Role.STUDENT){
-            Classroom classroom = getClassDetails(inviteToCreate.getClassroomId(), sender.getId());
+            Classroom classroom = getClassDetails(classroomId, sender.getId());
             builder.classroom(classroom)
                    .className(classroom.getName());
         }
@@ -100,16 +106,16 @@ public class InviteService {
     /**
      * Lista convites com paginação, ordenação e busca.
      * <p>
-     * ADMIN lista convites de INSTRUCTOR (não pode filtrar por turma).
+     * ADMIN lista convites de INSTRUCTOR (classroomId é ignorado se fornecido).
      * INSTRUCTOR lista convites de STUDENT das suas turmas (requer classroomId).
      * Convites com status ACCEPTED são excluídos da listagem.
      * </p>
      *
-     * @param classroomId ID da turma (obrigatório para INSTRUCTOR, não permitido para ADMIN)
+     * @param classroomId ID da turma (obrigatório para INSTRUCTOR, ignorado para ADMIN)
      * @param search      termo de busca para filtrar por email (opcional)
      * @param pageable    configuração de paginação e ordenação
      * @return página de convites convertidos para DTO
-     * @throws BadRequestException se ADMIN tentar filtrar por turma ou INSTRUCTOR não informar classroomId
+     * @throws BadRequestException se INSTRUCTOR não informar classroomId
      */
     public PageResponseDTO<InviteDTO> listInvites(Long classroomId, String search, Pageable pageable) {
         User user = authService.getAuthenticatedUser();
@@ -119,19 +125,18 @@ public class InviteService {
             ? "%" + search.toLowerCase() + "%"
             : null;
 
+        if (userRole == Role.INSTRUCTOR && classroomId == null) {
+            throw new BadRequestException("classroomId é obrigatório para listar convites de alunos");
+        }
+
         Page<Invite> invites;
         if (userRole == Role.ADMIN) {
-            if (classroomId != null) {
-                throw new BadRequestException("ADMIN não pode filtrar por turma");
-            }
             invites = inviteRepository.findInstructorInvites(Role.INSTRUCTOR, searchPattern, pageable);
         } else {
-            if (classroomId == null) {
-                throw new BadRequestException("classroomId é obrigatório para listar convites de alunos");
-            }
             invites = inviteRepository.findStudentInvites(Role.STUDENT, classroomId, user.getId(), searchPattern, pageable);
         }
 
+        // Converte para DTO
         Page<InviteDTO> inviteDTOs = invites.map(invite -> {
             InviteDTO dto = new InviteDTO();
             dto.setId(invite.getId());
@@ -151,6 +156,7 @@ public class InviteService {
             .last(inviteDTOs.isLast())
             .build();
     }
+
 
     /**
      * Exclui um convite.
@@ -234,13 +240,14 @@ public class InviteService {
      *
      * @param email email a ser verificado
      * @param role  role do remetente (ADMIN ou INSTRUCTOR)
+     * @param classroomId ID da turma (obrigatório para INSTRUCTOR, null para ADMIN)
      * @return true se já existe um convite pendente para o email, false caso contrário
      */
-    private boolean checkEmailInviteExists(String email, Role role){
+    private boolean checkEmailInviteExists(String email, Role role, Long classroomId){
         if(role == Role.ADMIN){
             return inviteRepository.findByEmail(email).isPresent();
         } else {
-            return inviteRepository.findByClassroomIdAndEmail(authService.getAuthenticatedUser().getId(), email)
+            return inviteRepository.findByClassroomIdAndEmail(classroomId, email)
                 .isPresent();
         }
     }

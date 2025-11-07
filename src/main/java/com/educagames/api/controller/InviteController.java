@@ -1,7 +1,5 @@
 package com.educagames.api.controller;
 
-import jakarta.validation.Valid;
-
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -32,6 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -75,13 +74,14 @@ public class InviteController {
     @PreAuthorize("hasRole('INSTRUCTOR') or hasRole('ADMIN')")
     @PostMapping("/send")
     public ResponseEntity<SuccessResponse<Void>> sendInvite(
+        @RequestParam(required = false) Long classroomId,
         @Valid @RequestBody CreateInviteRequestDTO request
     ){
-        inviteService.createInvite(request);
+        inviteService.createInvite(request, classroomId);
         return ResponseUtils.ok(null, "Convite enviado com sucesso");
     }
 
-    @Operation(summary = "Lista convites", description = "Lista convites com paginação, ordenação e busca. ADMIN lista convites de INSTRUCTOR. INSTRUCTOR lista convites de STUDENT das suas turmas (requer classroomId).")
+    @Operation(summary = "Lista convites", description = "Lista convites com paginação, ordenação e busca. ADMIN lista convites de INSTRUCTOR (classroomId é ignorado se fornecido). INSTRUCTOR lista convites de STUDENT das suas turmas (requer classroomId).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de convites obtida com sucesso",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -91,8 +91,7 @@ public class InviteController {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
-                                    @ExampleObject(name = "Missing ClassroomId", value = "{\"message\": \"classroomId é obrigatório para listar convites de alunos\", \"errors\": null}"),
-                                    @ExampleObject(name = "Admin Filter Not Allowed", value = "{\"message\": \"ADMIN não pode filtrar por turma\", \"errors\": null}")
+                                    @ExampleObject(name = "Missing ClassroomId", value = "{\"message\": \"classroomId é obrigatório para listar convites de alunos\", \"errors\": null}")
                             })),
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

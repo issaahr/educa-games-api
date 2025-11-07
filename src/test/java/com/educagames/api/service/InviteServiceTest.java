@@ -100,8 +100,8 @@ class InviteServiceTest {
             .build();
         testClassroom.setId(1L);
 
-        instructorInviteRequest = new CreateInviteRequestDTO("newinstructor@test.com", null);
-        studentInviteRequest = new CreateInviteRequestDTO("student@test.com", 1L);
+        instructorInviteRequest = new CreateInviteRequestDTO("newinstructor@test.com");
+        studentInviteRequest = new CreateInviteRequestDTO("student@test.com");
     }
 
     @Test
@@ -120,7 +120,7 @@ class InviteServiceTest {
         when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
-        inviteService.createInvite(instructorInviteRequest);
+        inviteService.createInvite(instructorInviteRequest, null);
 
         verify(inviteRepository, times(2)).save(any(Invite.class)); // Uma vez para criar, outra para atualizar status
         verify(emailService).send(anyString(), any());
@@ -131,9 +131,8 @@ class InviteServiceTest {
     void whenInstructorCreatesStudentInvite_shouldCreateInvite() {
         CustomUserDetails userDetails = new CustomUserDetails(instructorUser);
         when(authService.getAuthenticatedUserDetails()).thenReturn(userDetails);
-        when(authService.getAuthenticatedUser()).thenReturn(instructorUser);
         when(classroomRepository.findOneByIdAndInstructorId(1L, 2L)).thenReturn(Optional.of(testClassroom));
-        when(inviteRepository.findByClassroomIdAndEmail(any(), anyString())).thenReturn(Optional.empty());
+        when(inviteRepository.findByClassroomIdAndEmail(eq(1L), eq("student@test.com"))).thenReturn(Optional.empty());
         when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> {
             Invite invite = invocation.getArgument(0);
             if (invite.getToken() == null) {
@@ -144,7 +143,7 @@ class InviteServiceTest {
         when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
-        inviteService.createInvite(studentInviteRequest);
+        inviteService.createInvite(studentInviteRequest, 1L);
 
         verify(inviteRepository, times(2)).save(any(Invite.class)); // Uma vez para criar, outra para atualizar status
         verify(emailService).send(anyString(), any());
@@ -158,7 +157,7 @@ class InviteServiceTest {
         Invite existingInvite = Invite.builder().email("newinstructor@test.com").build();
         when(inviteRepository.findByEmail("newinstructor@test.com")).thenReturn(Optional.of(existingInvite));
 
-        assertThrows(ConflictException.class, () -> inviteService.createInvite(instructorInviteRequest));
+        assertThrows(ConflictException.class, () -> inviteService.createInvite(instructorInviteRequest, null));
         verify(inviteRepository, never()).save(any(Invite.class));
     }
 
@@ -167,11 +166,9 @@ class InviteServiceTest {
     void whenInstructorCreatesInviteWithoutClassroomId_shouldThrowBadRequestException() {
         CustomUserDetails userDetails = new CustomUserDetails(instructorUser);
         when(authService.getAuthenticatedUserDetails()).thenReturn(userDetails);
-        when(authService.getAuthenticatedUser()).thenReturn(instructorUser);
-        when(inviteRepository.findByClassroomIdAndEmail(any(), anyString())).thenReturn(Optional.empty());
 
-        CreateInviteRequestDTO request = new CreateInviteRequestDTO("test@test.com", null);
-        assertThrows(BadRequestException.class, () -> inviteService.createInvite(request));
+        CreateInviteRequestDTO request = new CreateInviteRequestDTO("test@test.com");
+        assertThrows(BadRequestException.class, () -> inviteService.createInvite(request, null));
         verify(inviteRepository, never()).save(any(Invite.class));
     }
 
@@ -201,12 +198,29 @@ class InviteServiceTest {
     }
 
     @Test
-    @DisplayName("Deve lançar BadRequestException quando ADMIN tenta filtrar por turma")
-    void whenAdminFiltersByClassroom_shouldThrowBadRequestException() {
+    @DisplayName("Deve ignorar classroomId quando ADMIN lista convites")
+    void whenAdminFiltersByClassroom_shouldIgnoreClassroomId() {
         when(authService.getAuthenticatedUser()).thenReturn(adminUser);
+
+        Invite invite = Invite.builder()
+            .email("instructor@test.com")
+            .status(InviteStatus.AWAITING_ACCEPTANCE)
+            .expiresAt(LocalDateTime.now().plusHours(24))
+            .build();
+        invite.setId(1L);
+
+        Page<Invite> invitePage = new PageImpl<>(List.of(invite));
         Pageable pageable = PageRequest.of(0, 10);
 
-        assertThrows(BadRequestException.class, () -> inviteService.listInvites(1L, null, pageable));
+        when(inviteRepository.findInstructorInvites(eq(Role.INSTRUCTOR), eq(null), eq(pageable)))
+            .thenReturn(invitePage);
+
+        PageResponseDTO<InviteDTO> result = inviteService.listInvites(1L, null, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(inviteRepository).findInstructorInvites(eq(Role.INSTRUCTOR), eq(null), eq(pageable));
+        verify(inviteRepository, never()).findStudentInvites(any(), any(), any(), any(), any());
     }
 
     @Test

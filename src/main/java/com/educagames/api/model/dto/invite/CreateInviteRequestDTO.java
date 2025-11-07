@@ -1,9 +1,8 @@
 package com.educagames.api.model.dto.invite;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +19,4 @@ public class CreateInviteRequestDTO {
     @NotBlank(message = "O email é obrigatório")
     private String email;
 
-    @Schema(description = "Id da turma", example = "1")
-    private Long classroomId;
 }
