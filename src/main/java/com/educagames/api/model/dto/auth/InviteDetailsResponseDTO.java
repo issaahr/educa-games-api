@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class InviteDetailsResponseDTO {
 
     @Schema(description = "Email para preencher o campo na tela de cadastro", example = "email@email.com")
@@ -21,5 +21,11 @@ public class InviteDetailsResponseDTO {
     @Schema(description = "Papel (role) do usuário no sistema.", example = "INSTRUCTOR")
     @JsonProperty("role")
     private Role type;
+
+    @Schema(description = "Nome da turma", example = "Turma de Java")
+    private String className;
+
+    @Schema(description = "Indica se é necessário criar um novo usuário (true) ou apenas vincular à turma (false). Para STUDENT, será false se o email já estiver cadastrado.", example = "true")
+    private Boolean requiresSignup;
 
 }

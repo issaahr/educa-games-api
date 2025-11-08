@@ -1,8 +1,6 @@
 package com.educagames.api.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -48,7 +46,6 @@ class UserServiceTest {
 
     private User adminUser;
     private User instructorUser;
-    private User inactiveInstructorUser;
 
     @BeforeEach
     void setUp() {
@@ -67,7 +64,7 @@ class UserServiceTest {
             .build();
         instructorUser.setId(2L);
 
-        inactiveInstructorUser = User.builder()
+        User inactiveInstructorUser = User.builder()
             .name("Inactive Instructor")
             .email("inactive@test.com")
             .role(Role.INSTRUCTOR)
@@ -148,7 +145,7 @@ class UserServiceTest {
         userService.changeUserStatus(2L, false);
 
         verify(userRepository).save(any(User.class));
-        assertEquals(false, instructorUser.isActive());
+        assertFalse(instructorUser.isActive());
     }
 
     @Test
@@ -161,4 +158,3 @@ class UserServiceTest {
         verify(userRepository, never()).save(any());
     }
 }
-

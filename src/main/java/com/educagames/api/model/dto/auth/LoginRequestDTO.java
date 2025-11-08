@@ -6,12 +6,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * DTO para dados de login.
  */
-@Getter @Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginRequestDTO implements Serializable {

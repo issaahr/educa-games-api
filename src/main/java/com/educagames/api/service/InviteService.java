@@ -157,7 +157,6 @@ public class InviteService {
             .build();
     }
 
-
     /**
      * Exclui um convite.
      * <p>
@@ -221,7 +220,13 @@ public class InviteService {
      */
     private void sendInviteEmail(Invite invite) {
         String inviteLink = String.format("%s/signup?invite=%s", frontendUrl, invite.getToken());
-        EmailTemplate configuredTemplate = inviteEmailTemplate.withData(inviteLink, logoUrl, expirationHours);
+        EmailTemplate configuredTemplate = inviteEmailTemplate.withData(
+            inviteLink,
+            logoUrl,
+            expirationHours,
+            invite.getRole(),
+            invite.getClassName() // null para INSTRUCTOR, nome da turma para STUDENT
+        );
 
         boolean sent = emailService.send(invite.getEmail(), configuredTemplate);
 

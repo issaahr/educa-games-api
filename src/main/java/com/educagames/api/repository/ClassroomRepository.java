@@ -13,6 +13,8 @@ import com.educagames.api.model.entity.Classroom ;
 public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     List<Classroom> findByInstructorId(Long instructorId);
 
+    List<Classroom> findByInstructorIdAndActiveTrue(Long instructorId);
+
     @EntityGraph(attributePaths = {"students", "students.student"})
     Optional<Classroom> findByIdAndInstructorId(Long id, Long instructorId);
 

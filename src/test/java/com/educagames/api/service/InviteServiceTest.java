@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -117,7 +118,7 @@ class InviteServiceTest {
             }
             return invite;
         });
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.createInvite(instructorInviteRequest, null);
@@ -140,7 +141,8 @@ class InviteServiceTest {
             }
             return invite;
         });
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt(), nullable(Role.class), nullable(String.class)))
+            .thenReturn(inviteEmailTemplate);
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.createInvite(studentInviteRequest, 1L);
@@ -154,7 +156,7 @@ class InviteServiceTest {
     void whenInviteAlreadyExists_shouldThrowConflictException() {
         CustomUserDetails userDetails = new CustomUserDetails(adminUser);
         when(authService.getAuthenticatedUserDetails()).thenReturn(userDetails);
-        Invite existingInvite = Invite.builder().email("newinstructor@test.com").build();
+        Invite existingInvite = Invite.builder().email("newinstructor@test.com").resendCount(0).build();
         when(inviteRepository.findByEmail("newinstructor@test.com")).thenReturn(Optional.of(existingInvite));
 
         assertThrows(ConflictException.class, () -> inviteService.createInvite(instructorInviteRequest, null));
@@ -181,7 +183,7 @@ class InviteServiceTest {
             .email("instructor@test.com")
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
-            .build();
+            .resendCount(0).build();
         invite.setId(1L);
 
         Page<Invite> invitePage = new PageImpl<>(List.of(invite));
@@ -206,7 +208,7 @@ class InviteServiceTest {
             .email("instructor@test.com")
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
-            .build();
+            .resendCount(0).build();
         invite.setId(1L);
 
         Page<Invite> invitePage = new PageImpl<>(List.of(invite));
@@ -269,7 +271,7 @@ class InviteServiceTest {
 
         when(inviteRepository.findById(eq(1L))).thenReturn(Optional.of(invite));
         when(inviteRepository.save(any(Invite.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(inviteEmailTemplate.withData(anyString(), anyString(), anyInt())).thenReturn(inviteEmailTemplate);
+
         when(emailService.send(anyString(), any())).thenReturn(true);
 
         inviteService.resendInvite(1L);
@@ -308,4 +310,3 @@ class InviteServiceTest {
         assertThrows(NotFoundException.class, () -> inviteService.resendInvite(1L));
     }
 }
-

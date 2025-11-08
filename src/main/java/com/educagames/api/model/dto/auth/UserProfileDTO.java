@@ -1,25 +1,29 @@
 package com.educagames.api.model.dto.auth;
 
-import java.io.Serializable;
+import java.util.List;
 
+import com.educagames.api.model.dto.classroom.ClassroomInfoDTO;
 import com.educagames.api.model.enums.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * DTO para dados do perfil do usuário autenticado.
- * <p>
- * Contém informações essenciais para personalização da interface do usuário,
- * como ID, nome e papel (role).
- */
+@Data
 @Builder
-public record UserProfileDTO(
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserProfileDTO {
     @Schema(description = "ID único do usuário.", example = "1")
-    Long userId,
-    @Schema(description = "Nome do usuário.", example = "Nome do Usuário")
-    String name,
+    Long userId;
+
     @Schema(description = "Papel (role) do usuário no sistema.", example = "INSTRUCTOR")
-    Role role
-) implements Serializable {
+    @JsonProperty("role")
+    Role role;
+
+    @Schema(description = "Lista de turmas ativas onde o aluno está matriculado (apenas para STUDENT). Facilita o switch de turma no frontend.", example = "[{\"id\": 1, \"className\": \"Turma A\"}, {\"id\": 2, \"className\": \"Turma B\"}]")
+    List<ClassroomInfoDTO> classes;
 }
