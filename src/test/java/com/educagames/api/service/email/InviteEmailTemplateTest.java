@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,8 +46,7 @@ class InviteEmailTemplateTest {
 
     @BeforeEach
     void setUp() {
-        // Configura o ResourceLoader para retornar o mock do Resource
-        when(resourceLoader.getResource(anyString())).thenReturn(htmlTemplate);
+        lenient().when(resourceLoader.getResource(anyString())).thenReturn(htmlTemplate);
     }
 
     @Test
@@ -360,7 +360,7 @@ class InviteEmailTemplateTest {
         assertTrue(htmlBody.contains("Turma de Matemática"));
         assertTrue(htmlBody.contains(TEST_INVITE_LINK));
         assertFalse(htmlBody.contains("{{className}}"));
-        
+
         assertNotNull(textBody);
         assertTrue(textBody.contains("Você foi convidado para ingressar na turma Turma de Matemática."));
     }

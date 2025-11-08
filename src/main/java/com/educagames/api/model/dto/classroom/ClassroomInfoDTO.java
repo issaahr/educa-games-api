@@ -17,4 +17,3 @@ public class ClassroomInfoDTO {
     @Schema(description = "Nome da turma", example = "Turma de Java")
     private String className;
 }
-

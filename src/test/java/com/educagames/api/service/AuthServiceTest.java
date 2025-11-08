@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +43,6 @@ import com.educagames.api.repository.StudentClassroomRepository;
 import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {

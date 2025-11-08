@@ -157,7 +157,6 @@ public class InviteService {
             .build();
     }
 
-
     /**
      * Exclui um convite.
      * <p>

@@ -128,4 +128,3 @@ class ClassroomServiceTest {
         assertThrows(NotFoundException.class, () -> classroomService.getClassById(1L));
     }
 }
-

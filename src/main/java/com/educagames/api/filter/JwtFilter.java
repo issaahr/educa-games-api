@@ -2,6 +2,11 @@ package com.educagames.api.filter;
 
 import java.io.IOException;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,11 +20,6 @@ import com.educagames.api.exception.JwtInvalidException;
 import com.educagames.api.service.CustomUserDetailsService;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Filtro responsável por validar o token JWT em cada requisição.
