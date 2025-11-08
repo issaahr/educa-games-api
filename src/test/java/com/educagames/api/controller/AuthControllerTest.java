@@ -9,8 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +32,8 @@ import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.service.AuthService;
 import com.educagames.api.util.CookieUtil;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -110,7 +110,11 @@ class AuthControllerTest {
         testUser.setId(userId);
 
         CustomUserDetails userDetails = new CustomUserDetails(testUser);
-        UserProfileDTO userProfile = new UserProfileDTO(userId, "Test User", Role.INSTRUCTOR);
+        UserProfileDTO userProfile = UserProfileDTO.builder()
+            .userId(userId)
+            .role(Role.INSTRUCTOR)
+            .classes(null)
+            .build();
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
             userDetails, null, userDetails.getAuthorities());
@@ -131,9 +135,8 @@ class AuthControllerTest {
 
         UserProfileDTO profileResponse = successResponse.getData();
         assertNotNull(profileResponse);
-        assertEquals(userId, profileResponse.userId());
-        assertEquals("Test User", profileResponse.name());
-        assertEquals(Role.INSTRUCTOR, profileResponse.role());
+        assertEquals(userId, profileResponse.getUserId());
+        assertEquals(Role.INSTRUCTOR, profileResponse.getRole());
 
         verify(authService, times(1)).getUserProfile(userId);
     }

@@ -157,7 +157,7 @@ class InviteServiceTest {
     void whenInviteAlreadyExists_shouldThrowConflictException() {
         CustomUserDetails userDetails = new CustomUserDetails(adminUser);
         when(authService.getAuthenticatedUserDetails()).thenReturn(userDetails);
-        Invite existingInvite = Invite.builder().email("newinstructor@test.com").build();
+        Invite existingInvite = Invite.builder().email("newinstructor@test.com").resendCount(0).build();
         when(inviteRepository.findByEmail("newinstructor@test.com")).thenReturn(Optional.of(existingInvite));
 
         assertThrows(ConflictException.class, () -> inviteService.createInvite(instructorInviteRequest, null));
@@ -184,7 +184,7 @@ class InviteServiceTest {
             .email("instructor@test.com")
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
-            .build();
+            .resendCount(0).build();
         invite.setId(1L);
 
         Page<Invite> invitePage = new PageImpl<>(List.of(invite));
@@ -209,7 +209,7 @@ class InviteServiceTest {
             .email("instructor@test.com")
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
-            .build();
+            .resendCount(0).build();
         invite.setId(1L);
 
         Page<Invite> invitePage = new PageImpl<>(List.of(invite));

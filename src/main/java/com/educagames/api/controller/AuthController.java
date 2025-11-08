@@ -1,8 +1,5 @@
 package com.educagames.api.controller;
 
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +28,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -42,12 +41,16 @@ public class AuthController {
     private final AuthService authService;
     private final CookieUtil cookieUtil;
 
-    @Operation(summary = "Valida um convite", description = "Verifica se um token de convite (UUID) é válido e retorna seus detalhes.")
+    @Operation(summary = "Valida um convite", description = "Verifica se um token de convite (UUID) é válido e retorna seus detalhes. Para convites de STUDENT, indica se o usuário já existe (requiresSignup=false) para que o frontend saiba se deve pedir dados de cadastro ou apenas vincular à turma.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Convite válido",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = SuccessResponse.class),
-                            examples = @ExampleObject(value = "{\"message\": \"Convite válido\", \"data\": {\"email\": \"usuario@exemplo.com\", \"role\": \"INSTRUCTOR\"}}"))),
+                            examples = {
+                                    @ExampleObject(name = "Novo usuário", value = "{\"message\": \"Convite válido\", \"data\": {\"email\": \"usuario@exemplo.com\", \"role\": \"STUDENT\", \"className\": \"Turma A\", \"requiresSignup\": true}}"),
+                                    @ExampleObject(name = "Usuário existente", value = "{\"message\": \"Convite válido\", \"data\": {\"email\": \"usuario@exemplo.com\", \"role\": \"STUDENT\", \"className\": \"Turma A\", \"requiresSignup\": false}}"),
+                                    @ExampleObject(name = "Instrutor", value = "{\"message\": \"Convite válido\", \"data\": {\"email\": \"instrutor@exemplo.com\", \"role\": \"INSTRUCTOR\", \"requiresSignup\": true}}")
+                            })),
             @ApiResponse(responseCode = "404", description = "Convite inexistente",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -98,12 +101,15 @@ public class AuthController {
         return ResponseUtils.noContent();
     }
 
-    @Operation(summary = "Obtém dados do usuário autenticado", description = "Retorna informações do perfil do usuário logado, como ID, nome e papel (role).")
+    @Operation(summary = "Obtém dados do usuário autenticado", description = "Retorna informações do perfil do usuário logado, como ID e papel (role). Para STUDENT, também retorna lista de turmas ativas com id e className.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Dados do usuário obtidos com sucesso",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = SuccessResponse.class),
-                            examples = @ExampleObject(value = "{\"message\": \"Dados do usuário obtidos com sucesso\", \"data\": {\"userId\": 1, \"name\": \"Nome do Usuário\", \"role\": \"INSTRUCTOR\"}}"))),
+                            examples = {
+                                    @ExampleObject(name = "STUDENT", value = "{\"message\": \"Dados do usuário obtidos com sucesso\", \"data\": {\"userId\": 1, \"role\": \"STUDENT\", \"classes\": [{\"id\": 1, \"className\": \"Turma A\"}, {\"id\": 2, \"className\": \"Turma B\"}]}}"),
+                                    @ExampleObject(name = "INSTRUCTOR", value = "{\"message\": \"Dados do usuário obtidos com sucesso\", \"data\": {\"userId\": 1, \"role\": \"INSTRUCTOR\", \"classes\": null}}")
+                            })),
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -115,9 +121,9 @@ public class AuthController {
         return ResponseUtils.ok(userProfile, "Dados do usuário obtidos com sucesso");
     }
 
-    @Operation(summary = "Finaliza o cadastro de um novo usuário a partir de um convite", description = "Valida um token de convite e cria um novo usuário com o nome e senha fornecidos.")
+    @Operation(summary = "Finaliza o cadastro de um novo usuário a partir de um convite", description = "Valida um token de convite e cria um novo usuário com o nome e senha fornecidos. Para STUDENT, se o usuário já existe (requiresSignup=false do validate-invite), nome e senha são opcionais e apenas vincula o usuário à turma.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Cadastro finalizado com sucesso.",
+            @ApiResponse(responseCode = "201", description = "Cadastro finalizado com sucesso ou usuário vinculado à turma.",
                     content = @Content(schema = @Schema(implementation = SuccessResponse.class),
                             examples = @ExampleObject(value = "{\"message\": \"Cadastro realizado com sucesso!\", \"data\": null}"))),
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos ou convite não encontrado.",
@@ -125,6 +131,7 @@ public class AuthController {
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(name = "Validation Error", value = "{\"message\": \"Erro de validação nos campos\", \"errors\": [\"password: A senha deve ter no mínimo 8 caracteres\"]}"),
+                                    @ExampleObject(name = "Missing Required Fields", value = "{\"message\": \"O nome é obrigatório para criar um novo usuário\", \"errors\": null}"),
                                     @ExampleObject(name = "Invite Not Found", value = "{\"message\": \"Convite inválido ou expirado.\", \"errors\": null}")
                             })),
             @ApiResponse(responseCode = "409", description = "Convite já utilizado ou e-mail já cadastrado.",

@@ -3,13 +3,15 @@ package com.educagames.api.model.dto.shared;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class PageResponseDTO<T> {
 
     @Schema(description = "Lista de objetos")

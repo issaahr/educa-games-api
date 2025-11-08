@@ -1,10 +1,9 @@
 package com.educagames.api.model.dto.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -16,8 +15,7 @@ public class CompleteSignupRequest {
     @NotBlank(message = "O convite não pode ser vazio")
     private final String invite;
 
-    @Schema(description = "Nome do usuário a ser criado", example = "Ana Silva Ribeiro", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "O nome não pode ser vazio")
+    @Schema(description = "Nome do usuário a ser criado. Opcional quando o usuário já existe (requiresSignup=false).", example = "Ana Silva Ribeiro", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     @Size(min = 3, max = 120, message = "O nome deve ter pelo menos 3 caracteres")
     @Pattern(
         regexp = "^[\\p{L}\\p{M}]+([\\s'\\-][\\p{L}\\p{M}]+)*$",
@@ -25,8 +23,7 @@ public class CompleteSignupRequest {
     )
     private final String name;
 
-    @Schema(description = "Senha do usuário a ser criado", example = "senha123", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "A senha não pode ser vazia")
+    @Schema(description = "Senha do usuário a ser criado. Opcional quando o usuário já existe (requiresSignup=false).", example = "senha123", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     @Size(min = 8, max = 128, message = "A senha deve ter pelo menos 8 caracteres")
     private final String password;
 }

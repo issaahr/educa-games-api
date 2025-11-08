@@ -6,14 +6,12 @@ import com.educagames.api.model.enums.InviteStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class InviteDTO {
     @Schema(description = "ID do convite", example = "1")
     private Long id;

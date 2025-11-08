@@ -37,6 +37,7 @@ import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.InviteStatus;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.repository.InviteRepository;
+import com.educagames.api.repository.StudentClassroomRepository;
 import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
@@ -60,6 +61,9 @@ class AuthServiceTest {
 
     @Mock
     private InviteRepository inviteRepository;
+
+    @Mock
+    private StudentClassroomRepository studentClassroomRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -136,22 +140,47 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Deve lançar UnauthorizedException ao logar com usuário inativo")
+    void whenLoginWithInactiveUser_shouldThrowUnauthorizedException() {
+        // Arrange
+        MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
+        User inactiveUser = new User();
+        inactiveUser.setId(2L);
+        inactiveUser.setEmail(loginRequest.getEmail());
+        inactiveUser.setPassword("encodedPassword");
+        inactiveUser.setRole(Role.INSTRUCTOR);
+        inactiveUser.setActive(false);
+
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(inactiveUser));
+
+        // Act & Assert
+        UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest, httpServletResponse));
+
+        assertEquals("Usuário inativo", exception.getMessage());
+
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(jwtUtil, never()).generateToken(anyLong(), anyString());
+        verify(cookieUtil, never()).addAuthCookie(any(HttpServletResponse.class), anyString());
+    }
+
+    @Test
     @DisplayName("Deve retornar UserProfileDTO com role para um usuário existente e ativo")
     void whenGetUserProfileForActiveUser_shouldReturnUserProfileDTO() {
         // Arrange
         Long userId = 1L;
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        // Para INSTRUCTOR, o repository de StudentClassroom não é chamado
 
         // Act
         UserProfileDTO userProfile = authService.getUserProfile(userId);
 
         // Assert
         assertNotNull(userProfile);
-        assertEquals(testUser.getId(), userProfile.userId());
-        assertEquals(testUser.getName(), userProfile.name());
-        assertEquals(testUser.getRole(), userProfile.role());
+        assertEquals(testUser.getId(), userProfile.getUserId());
+        assertEquals(testUser.getRole(), userProfile.getRole());
 
         verify(userRepository, times(1)).findById(userId);
+        verify(studentClassroomRepository, never()).findActiveClassroomIdAndNameByStudentId(anyLong());
     }
 
     @Test
@@ -190,7 +219,7 @@ class AuthServiceTest {
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
             .role(Role.INSTRUCTOR)
-            .build();
+            .resendCount(0).build();
 
         when(inviteRepository.findByToken(token)).thenReturn(Optional.of(invite));
 
@@ -220,7 +249,7 @@ class AuthServiceTest {
             .status(InviteStatus.ACCEPTED)
             .expiresAt(LocalDateTime.now().plusHours(24))
             .role(Role.INSTRUCTOR)
-            .build();
+            .resendCount(0).build();
 
         when(inviteRepository.findByToken(token)).thenReturn(Optional.of(invite));
 
@@ -237,7 +266,7 @@ class AuthServiceTest {
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().minusHours(1))
             .role(Role.INSTRUCTOR)
-            .build();
+            .resendCount(0).build();
 
         when(inviteRepository.findByToken(token)).thenReturn(Optional.of(invite));
         when(inviteRepository.save(any(Invite.class))).thenReturn(invite);
@@ -258,7 +287,7 @@ class AuthServiceTest {
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
             .role(Role.INSTRUCTOR)
-            .build();
+            .resendCount(0).build();
 
         when(inviteRepository.findByToken(token)).thenReturn(Optional.of(invite));
         when(userRepository.findByEmail(invite.getEmail())).thenReturn(Optional.empty());
@@ -284,7 +313,7 @@ class AuthServiceTest {
             .status(InviteStatus.AWAITING_ACCEPTANCE)
             .expiresAt(LocalDateTime.now().plusHours(24))
             .role(Role.INSTRUCTOR)
-            .build();
+            .resendCount(0).build();
 
         when(inviteRepository.findByToken(token)).thenReturn(Optional.of(invite));
         when(userRepository.findByEmail(invite.getEmail())).thenReturn(Optional.of(testUser));
