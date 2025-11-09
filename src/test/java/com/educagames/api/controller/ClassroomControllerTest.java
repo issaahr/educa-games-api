@@ -1,0 +1,93 @@
+package com.educagames.api.controller;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Objects;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
+import com.educagames.api.model.dto.classroom.ClassroomDetailsDTO;
+import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
+import com.educagames.api.model.dto.shared.SuccessResponse;
+import com.educagames.api.service.ClassroomService;
+
+@ExtendWith(MockitoExtension.class)
+class ClassroomControllerTest {
+
+    @Mock
+    private ClassroomService classroomService;
+
+    @InjectMocks
+    private ClassroomController classroomController;
+
+    private CreateClassRequestDTO createRequest;
+    private ClassroomDTO classroomDTO;
+    private ClassroomDetailsDTO classroomDetails;
+
+    @BeforeEach
+    void setUp() {
+        createRequest = new CreateClassRequestDTO("Turma A");
+        classroomDTO = new ClassroomDTO(1L, "Turma A", true);
+        classroomDetails = new ClassroomDetailsDTO(1L, "Turma A", List.of());
+    }
+
+    @Test
+    @DisplayName("Deve criar turma e retornar 201 com mensagem de sucesso")
+    void createClass_shouldReturnCreatedWithSuccessMessage() {
+        doNothing().when(classroomService).createClass(any(CreateClassRequestDTO.class));
+
+        ResponseEntity<SuccessResponse<CreateClassRequestDTO>> response = classroomController.createClass(createRequest);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        SuccessResponse<CreateClassRequestDTO> body = Objects.requireNonNull(response.getBody());
+        assertEquals("Turma criada com sucesso", body.getMessage());
+        assertEquals(createRequest.getName(), body.getData().getName());
+        verify(classroomService).createClass(any(CreateClassRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Deve listar turmas e retornar 200 com lista de ClassroomDTO")
+    void listClasses_shouldReturnOkWithClasses() {
+        when(classroomService.listClasses()).thenReturn(List.of(classroomDTO));
+
+        ResponseEntity<SuccessResponse<List<ClassroomDTO>>> response = classroomController.listClasses();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        SuccessResponse<List<ClassroomDTO>> body = Objects.requireNonNull(response.getBody());
+        assertNull(body.getMessage());
+        assertNotNull(body.getData());
+        assertEquals(1, body.getData().size());
+        assertEquals(classroomDTO.getId(), body.getData().get(0).getId());
+        verify(classroomService).listClasses();
+    }
+
+    @Test
+    @DisplayName("Deve retornar detalhes da turma e 200 OK")
+    void classDetails_shouldReturnOkWithDetails() {
+        when(classroomService.getClassById(1L)).thenReturn(classroomDetails);
+
+        ResponseEntity<SuccessResponse<ClassroomDetailsDTO>> response = classroomController.classDetails(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        SuccessResponse<ClassroomDetailsDTO> body = Objects.requireNonNull(response.getBody());
+        assertNull(body.getMessage());
+        assertNotNull(body.getData());
+        assertEquals(1L, body.getData().getId());
+        assertEquals("Turma A", body.getData().getName());
+        verify(classroomService).getClassById(1L);
+    }
+}

@@ -196,7 +196,16 @@ public class UserService {
 
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new BadRequestException("Formato inválido. Use: PNG, JPG ou GIF");
+            throw new BadRequestException("Formato inválido. Use: PNG, JPG ou JPEG");
+        }
+
+        // Valida conteúdo da imagem
+        try {
+            if (javax.imageio.ImageIO.read(file.getInputStream()) == null) {
+                throw new BadRequestException("Formato inválido. Use: PNG, JPG ou JPEG");
+            }
+        } catch (java.io.IOException e) {
+            throw new BadRequestException("Não foi possível processar a imagem enviada");
         }
     }
 

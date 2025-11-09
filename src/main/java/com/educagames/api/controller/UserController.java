@@ -115,7 +115,7 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "Formato de imagem inválido",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = "{\"message\": \"Formato inválido. Use: PNG, JPG ou GIF\", \"errors\": null}"))),
+                examples = @ExampleObject(value = "{\"message\": \"Formato inválido. Use: PNG, JPG ou JPEG\", \"errors\": null}"))),
         @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
