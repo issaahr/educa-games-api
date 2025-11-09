@@ -7,15 +7,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,8 +25,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.exception.ConflictException;
 import com.educagames.api.exception.InviteExpiredException;
 import com.educagames.api.exception.NotFoundException;
@@ -84,6 +89,11 @@ class AuthServiceTest {
         testUser.setActive(true);
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     @DisplayName("Deve chamar o CookieUtil ao logar com credenciais válidas")
     void whenLoginWithValidCredentials_shouldCallCookieUtil() {
@@ -99,10 +109,10 @@ class AuthServiceTest {
         authService.login(loginRequest, httpServletResponse);
 
         // Assert
-        verify(userRepository, times(1)).findByEmail(loginRequest.getEmail());
-        verify(passwordEncoder, times(1)).matches(loginRequest.getPassword(), testUser.getPassword());
-        verify(jwtUtil, times(1)).generateToken(testUser.getId(), testUser.getRole().toString());
-        verify(cookieUtil, times(1)).addAuthCookie(httpServletResponse, fakeToken);
+        verify(userRepository).findByEmail(loginRequest.getEmail());
+        verify(passwordEncoder).matches(loginRequest.getPassword(), testUser.getPassword());
+        verify(jwtUtil).generateToken(testUser.getId(), testUser.getRole().toString());
+        verify(cookieUtil).addAuthCookie(httpServletResponse, fakeToken);
     }
 
     @Test
@@ -120,6 +130,34 @@ class AuthServiceTest {
         verify(passwordEncoder, never()).matches(anyString(), anyString());
         verify(jwtUtil, never()).generateToken(anyLong(), anyString());
         verify(cookieUtil, never()).addAuthCookie(any(HttpServletResponse.class), anyString());
+    }
+
+    @Test
+    @DisplayName("Deve retornar CustomUserDetails autenticado do SecurityContext")
+    void whenGetAuthenticatedUserDetails_shouldReturnCustomUserDetails() {
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        CustomUserDetails result = authService.getAuthenticatedUserDetails();
+        assertNotNull(result);
+        assertEquals(testUser.getId(), result.getUser().getId());
+        assertEquals(testUser.getEmail(), result.getUsername());
+    }
+
+    @Test
+    @DisplayName("Deve retornar User autenticado do SecurityContext")
+    void whenGetAuthenticatedUser_shouldReturnUser() {
+        CustomUserDetails userDetails = new CustomUserDetails(testUser);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        User user = authService.getAuthenticatedUser();
+        assertNotNull(user);
+        assertEquals(testUser.getId(), user.getId());
+        assertEquals(testUser.getEmail(), user.getEmail());
     }
 
     @Test
@@ -179,8 +217,40 @@ class AuthServiceTest {
         assertEquals(testUser.getId(), userProfile.getUserId());
         assertEquals(testUser.getRole(), userProfile.getRole());
 
-        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository).findById(userId);
         verify(studentClassroomRepository, never()).findActiveClassroomIdAndNameByStudentId(anyLong());
+    }
+
+    @Test
+    @DisplayName("Deve retornar classes ativas para usuário STUDENT")
+    void whenGetUserProfileForStudent_shouldReturnActiveClassrooms() {
+        // Arrange
+        Long userId = 1L;
+        testUser.setRole(Role.STUDENT);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+
+        List<Object[]> classroomRows = List.of(
+            new Object[]{1L, "Turma A"},
+            new Object[]{2L, "Turma B"}
+        );
+        when(studentClassroomRepository.findActiveClassroomIdAndNameByStudentId(userId)).thenReturn(classroomRows);
+
+        // Act
+        UserProfileDTO userProfile = authService.getUserProfile(userId);
+
+        // Assert
+        assertNotNull(userProfile);
+        assertEquals(userId, userProfile.getUserId());
+        assertEquals(Role.STUDENT, userProfile.getRole());
+        assertNotNull(userProfile.getClasses());
+        assertEquals(2, userProfile.getClasses().size());
+        assertEquals(1L, userProfile.getClasses().get(0).getId());
+        assertEquals("Turma A", userProfile.getClasses().get(0).getClassName());
+        assertEquals(2L, userProfile.getClasses().get(1).getId());
+        assertEquals("Turma B", userProfile.getClasses().get(1).getClassName());
+
+        verify(userRepository).findById(userId);
+        verify(studentClassroomRepository).findActiveClassroomIdAndNameByStudentId(userId);
     }
 
     @Test

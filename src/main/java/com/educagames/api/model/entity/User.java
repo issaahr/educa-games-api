@@ -1,5 +1,6 @@
 package com.educagames.api.model.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,13 +49,13 @@ public class User extends BaseEntity {
     private LocalDateTime lastLogin;
 
     @Column()
-    private LocalDateTime birthDate;
+    private LocalDate birthDate;
 
     @Column(length = 500)
     private String description;
 
     @Column()
-    private String imageUrl;
+    private String avatarUrl;
 
     // Relations
     @Builder.Default

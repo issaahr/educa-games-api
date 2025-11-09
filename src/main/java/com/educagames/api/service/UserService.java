@@ -1,14 +1,22 @@
 package com.educagames.api.service;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.educagames.api.exception.BadRequestException;
 import com.educagames.api.exception.ForbiddenException;
 import com.educagames.api.exception.NotFoundException;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
+import com.educagames.api.model.dto.user.EditProfileRequestDTO;
 import com.educagames.api.model.dto.user.ListInstructorDTO;
+import com.educagames.api.model.dto.user.ProfileResponseDTO;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.model.enums.Role;
 import com.educagames.api.repository.UserRepository;
@@ -20,7 +28,16 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
     private final AuthService authService;
+    private final UploadService uploadService;
     private final UserRepository userRepository;
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        "image/png",
+        "image/jpeg",
+        "image/jpg"
+    );
+
+    private static final long MAX_AVATAR_SIZE = 3 * 1024 * 1024;
 
     /**
      * Lista instrutores com paginação, ordenação e busca.
@@ -114,5 +131,111 @@ public class UserService {
             targetUser.setActive(active);
             userRepository.save(targetUser);
         }
+    }
+
+    /**
+     * Atualiza o perfil do usuário autenticado.
+     *<p>
+     * Funcionalidades suportadas:
+     * - Atualizar nome, data de nascimento e descrição;
+     * - Remover descrição (clearDescription = true);
+     * - Remover avatar (removeAvatar = true);
+     * - Upload de novo avatar via multipart;
+     *
+     * @param avatar arquivo de imagem enviado (opcional)
+     * @param dto    dados do perfil em JSON (nome, bio, nascimento, flags)
+     */
+    @Transactional
+    public void updateAuthenticatedProfileUser(MultipartFile avatar, EditProfileRequestDTO dto) {
+        User user = authService.getAuthenticatedUser();
+
+        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
+            user.setName(dto.getName());
+        }
+
+        if (dto.getBirthDate() != null) {
+            validateBirthDate(dto.getBirthDate());
+            user.setBirthDate(dto.getBirthDate());
+        }
+
+        if (Boolean.TRUE.equals(dto.getClearDescription())) {
+            user.setDescription(null);
+        } else if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
+            user.setDescription(dto.getDescription());
+        }
+
+        String oldAvatar = user.getAvatarUrl();
+
+        if (Boolean.TRUE.equals(dto.getRemoveAvatar())) {
+            user.setAvatarUrl(null);
+        } else if (avatar != null && !avatar.isEmpty()) {
+            validateAvatar(avatar);
+            String newAvatarUrl = uploadService.uploadAvatar(user.getId(), avatar);
+            user.setAvatarUrl(newAvatarUrl);
+        }
+
+        userRepository.save(user);
+
+        if (oldAvatar != null && !oldAvatar.isBlank() &&
+            (Boolean.TRUE.equals(dto.getRemoveAvatar()) ||
+                (avatar != null && !avatar.isEmpty()))) {
+            uploadService.deleteFile(oldAvatar);
+        }
+    }
+
+    /**
+     * Verifica se o avatar enviado é válido.
+     *
+     * @param file arquivo enviado
+     * @throws BadRequestException se ultrapassar 3MB ou tipo não permitido
+     */
+    private void validateAvatar(MultipartFile file) {
+        if (file.getSize() > MAX_AVATAR_SIZE) {
+            throw new BadRequestException("Arquivo muito grande. Máximo: 3MB");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new BadRequestException("Formato inválido. Use: PNG, JPG ou JPEG");
+        }
+
+        // Valida conteúdo da imagem
+        try {
+            if (javax.imageio.ImageIO.read(file.getInputStream()) == null) {
+                throw new BadRequestException("Formato inválido. Use: PNG, JPG ou JPEG");
+            }
+        } catch (java.io.IOException e) {
+            throw new BadRequestException("Não foi possível processar a imagem enviada");
+        }
+    }
+
+    /**
+     * Valida se a idade não ultrapassa 120 anos.
+     *
+     * @param birthDate data de nascimento do usuário
+     * @throws BadRequestException se idade > 120
+     */
+    public void validateBirthDate(LocalDate birthDate) {
+        int age = Period.between(birthDate, LocalDate.now()).getYears();
+        if (age > 120) {
+            throw new BadRequestException("Data de nascimento inválida");
+        }
+    }
+
+    public ProfileResponseDTO getAuthenticatedUserProfile(){
+        User authenticatedUser = authService.getAuthenticatedUser();
+
+        User user = userRepository.findById(authenticatedUser.getId())
+            .orElseThrow(()->new NotFoundException("Usuário não encontrado"));
+
+        ProfileResponseDTO.ProfileResponseDTOBuilder builder = ProfileResponseDTO.builder()
+            .id(user.getId())
+            .name(user.getName())
+            .email(user.getEmail())
+            .description(user.getDescription())
+            .birthDate(user.getBirthDate())
+            .avatarUrl(user.getAvatarUrl());
+
+        return builder.build();
     }
 }

@@ -22,6 +22,10 @@ public class CompleteSignupRequest {
         regexp = "^[\\p{L}\\p{M}]+([\\s'\\-][\\p{L}\\p{M}]+)*$",
         message = "Nome não pode conter números ou símbolos especiais"
     )
+    @Pattern(
+        regexp = "^[\\p{L}\\p{M}]+( [\\p{L}\\p{M}]+)+$",
+        message = "Informe nome e sobrenome"
+    )
     private final String name;
 
     @Schema(description = "Senha do usuário a ser criado. Opcional quando o usuário já existe (requiresSignup=false).", example = "senha123", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

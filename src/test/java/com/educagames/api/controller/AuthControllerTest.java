@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -75,7 +74,7 @@ class AuthControllerTest {
         assertNull(response.getBody());
 
         // Verifica se o serviço foi chamado corretamente
-        verify(authService, times(1)).login(loginRequest, httpServletResponse);
+        verify(authService).login(loginRequest, httpServletResponse);
     }
 
     @Test
@@ -92,7 +91,7 @@ class AuthControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
 
-        verify(cookieUtil, times(1)).removeAuthCookie(httpServletResponse);
+        verify(cookieUtil).removeAuthCookie(httpServletResponse);
     }
 
     @Test
@@ -138,7 +137,7 @@ class AuthControllerTest {
         assertEquals(userId, profileResponse.getUserId());
         assertEquals(Role.INSTRUCTOR, profileResponse.getRole());
 
-        verify(authService, times(1)).getUserProfile(userId);
+        verify(authService).getUserProfile(userId);
     }
 
 }

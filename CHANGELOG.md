@@ -7,6 +7,31 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.2.0] - 2025-11-09
+
+### Adicionado
+
+- Endpoints de perfil do usuário autenticado:
+  - `GET /user/profile` (detalhes básicos de perfil)
+  - `PATCH /user/profile` (atualização via multipart com avatar opcional)
+- Endpoint `GET /auth/me` retorna `userId` e `role`; para `STUDENT`, lista de turmas ativas (`id`, `className`)
+- DTOs adicionados: `ProfileResponseDTO`, `EditProfileRequestDTO`, `UserProfileDTO`, `ClassroomInfoDTO`
+
+### Alterado
+
+- Mensagens de erro e exemplos OpenAPI atualizados para uploads de avatar
+- Padronização de testes: remoção de `times(1)` em `verify(...)`
+
+### Técnico
+
+- Validações de avatar: `image/png`, `image/jpeg`, `image/jpg`; tamanho máximo 3MB; verificação básica com `ImageIO.read(...)`
+
+### Notas
+
+- Sem breaking changes
+- Sem alterações no banco de dados
+- Para detalhes, consulte [docs/release-notes/v1.2.0.md](docs/release-notes/v1.2.0.md)
+
 ## [1.1.0] - 2025-11-08
 
 ### Adicionado
@@ -91,6 +116,7 @@ Para documentação detalhada, consulte [docs/release-notes/v1.0.0.md](docs/rele
 
 ---
 
+[1.2.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.2.0
 [1.1.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.1.0
 [1.0.1]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.1
 [1.0.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.0
