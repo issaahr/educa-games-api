@@ -12,9 +12,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +42,8 @@ import com.educagames.api.repository.StudentClassroomRepository;
 import com.educagames.api.repository.UserRepository;
 import com.educagames.api.util.CookieUtil;
 import com.educagames.api.util.JwtUtil;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -181,6 +182,38 @@ class AuthServiceTest {
 
         verify(userRepository, times(1)).findById(userId);
         verify(studentClassroomRepository, never()).findActiveClassroomIdAndNameByStudentId(anyLong());
+    }
+
+    @Test
+    @DisplayName("Deve retornar classes ativas para usuário STUDENT")
+    void whenGetUserProfileForStudent_shouldReturnActiveClassrooms() {
+        // Arrange
+        Long userId = 1L;
+        testUser.setRole(Role.STUDENT);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+
+        List<Object[]> classroomRows = List.of(
+            new Object[]{1L, "Turma A"},
+            new Object[]{2L, "Turma B"}
+        );
+        when(studentClassroomRepository.findActiveClassroomIdAndNameByStudentId(userId)).thenReturn(classroomRows);
+
+        // Act
+        UserProfileDTO userProfile = authService.getUserProfile(userId);
+
+        // Assert
+        assertNotNull(userProfile);
+        assertEquals(userId, userProfile.getUserId());
+        assertEquals(Role.STUDENT, userProfile.getRole());
+        assertNotNull(userProfile.getClasses());
+        assertEquals(2, userProfile.getClasses().size());
+        assertEquals(1L, userProfile.getClasses().get(0).getId());
+        assertEquals("Turma A", userProfile.getClasses().get(0).getClassName());
+        assertEquals(2L, userProfile.getClasses().get(1).getId());
+        assertEquals("Turma B", userProfile.getClasses().get(1).getClassName());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(studentClassroomRepository, times(1)).findActiveClassroomIdAndNameByStudentId(userId);
     }
 
     @Test

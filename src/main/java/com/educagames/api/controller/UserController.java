@@ -1,25 +1,24 @@
 package com.educagames.api.controller;
 
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.model.dto.user.ChangeUserStatusDTO;
+import com.educagames.api.model.dto.user.EditProfileRequestDTO;
 import com.educagames.api.model.dto.user.ListInstructorDTO;
+import com.educagames.api.model.dto.user.ProfileResponseDTO;
 import com.educagames.api.service.UserService;
 import com.educagames.api.util.ResponseUtils;
 
@@ -96,6 +95,60 @@ public class UserController {
     public ResponseEntity<Void> deleteInstructor(@RequestBody OnlyIdDTO request){
         userService.deleteInstructor(request.getId());
         return ResponseUtils.noContent();
+    }
+
+    @Operation(
+        summary = "Atualiza perfil do usuário autenticado",
+        description = "Recebe multipart/form-data com duas partes: 'data' (JSON de EditProfileRequestDTO) e 'avatar' (arquivo de imagem opcional).\n" +
+            "Valida nome, data de nascimento (passado, idade ≤120), tipos e tamanho do arquivo."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Perfil atualizado com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Requisição inválida",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Data de nascimento inválida\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "400", description = "Arquivo muito grande",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Arquivo muito grande. Máximo: 3MB\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "400", description = "Formato de imagem inválido",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Formato inválido. Use: PNG, JPG ou GIF\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}")))
+    })
+    @PatchMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateUserProfile(
+        @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+        @Valid @RequestPart("data") EditProfileRequestDTO data
+        ){
+        userService.updateAuthenticatedProfileUser(avatar, data);
+        return ResponseUtils.noContent();
+    }
+
+    @Operation(summary = "Obtém perfil do usuário autenticado", description = "Retorna os dados de perfil do usuário atualmente autenticado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Perfil obtido com sucesso",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = SuccessResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": null, \"data\": {\"id\": 1, \"name\": \"John Doe\", \"email\": \"john@example.com\", \"avatarUrl\": \"https://cdn.example.com/avatar.jpg\", \"birthDate\": \"2000-05-01\", \"description\": \"Aluno dedicado\"}}"))),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": \"Usuário não encontrado\", \"errors\": null}")))
+    })
+    @GetMapping("/profile")
+    public ResponseEntity<SuccessResponse<ProfileResponseDTO>> getUserProfile(){
+        ProfileResponseDTO profile = userService.getAuthenticatedUserProfile();
+        return ResponseUtils.ok(profile, null);
     }
 
     @Operation(summary = "Altera status de usuário/instrutor", description = "Ativa ou desativa um usuário/instrutor. ADMIN pode alterar status de INSTRUCTOR. INSTRUCTOR poderá alterar status de STUDENT nas suas turmas (futuro).")

@@ -1,8 +1,11 @@
 package com.educagames.api.model.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.educagames.api.model.enums.Role;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,9 +14,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
-import com.educagames.api.model.enums.Role;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,13 +48,13 @@ public class User extends BaseEntity {
     private LocalDateTime lastLogin;
 
     @Column()
-    private LocalDateTime birthDate;
+    private LocalDate birthDate;
 
     @Column(length = 500)
     private String description;
 
     @Column()
-    private String imageUrl;
+    private String avatarUrl;
 
     // Relations
     @Builder.Default
