@@ -136,6 +136,8 @@ Acesse a documentação interativa:
 
 ### 👥 Usuários (`/user`)
 
+- `GET /user/profile` - Perfil do usuário autenticado
+- `PATCH /user/profile` - Atualiza perfil (multipart com avatar opcional)
 - `GET /user/instructors` - Lista instrutores com paginação e busca (ADMIN)
 - `DELETE /user/instructors` - Exclui um instrutor (ADMIN)
 - `PUT /user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
@@ -150,7 +152,7 @@ Acesse a documentação interativa:
 ### 🏫 Turmas (`/classroom`)
 
 - `POST /classroom/create` - Cria uma nova turma (INSTRUCTOR)
-- `GET /classroom/` - Lista turmas do instrutor autenticado (INSTRUCTOR)
+- `GET /classroom` - Lista turmas do instrutor autenticado (INSTRUCTOR)
 - `GET /classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
 
 ### 🏥 Monitoramento
@@ -162,6 +164,8 @@ Acesse a documentação interativa:
 - `GET /swagger-ui/**` - Interface Swagger UI
 - `GET /v3/api-docs/**` - Especificação OpenAPI
 
+> Nota: esta seção é um mapa rápido. Para lista completa e atualizada de endpoints, parâmetros e respostas, consulte a documentação Swagger/OpenAPI acima.
+
 ## Arquitetura
 
 ```
@@ -172,7 +176,7 @@ Acesse a documentação interativa:
                               │
                               ▼
                        ┌─────────────────┐
-                       │   JWT Tokens    │
+                       │   JWT em cookie │
                        │   (HttpOnly)    │
                        └─────────────────┘
 ```
@@ -181,11 +185,11 @@ Acesse a documentação interativa:
 
 - **Controller** - Endpoints REST (AuthController, UserController, InviteController, ClassroomController)
 - **Service** - Lógica de negócio (AuthService, UserService, InviteService, ClassroomService, EmailService)
-- **Repository** - Acesso a dados (UserRepository, InviteRepository, ClassroomRepository)
 - **Entity** - Modelo de dados (User, Invite, Classroom, StudentClassroom, BaseEntity)
-- **DTO** - Transferência de dados (LoginRequestDTO, UserProfileDTO, InviteDTO, ClassroomDTO, etc.)
+- **DTO** - Transferência de dados (LoginRequestDTO, UserProfileDTO, EditProfileRequestDTO, ProfileResponseDTO, InviteDTO, ClassroomDTO, etc.)
+- **Repository** - Acesso a dados (UserRepository, InviteRepository, ClassroomRepository, StudentClassroomRepository)
 - **Filter** - Interceptação de requests (JwtFilter)
-- **Config** - Configurações da aplicação (SecurityConfig, CorsConfig)
+- **Config** - Configurações da aplicação (SecurityConfig, CorsConfig) — sessões stateless (`SessionCreationPolicy.STATELESS`) e `JwtFilter` na `SecurityFilterChain`
 - **Exception** - Tratamento personalizado de erros
 - **Util** - Utilitários (JwtUtil, CookieUtil, ResponseUtils)
 - **Seed** - Inicialização de dados (DatabaseSeeder)
@@ -207,6 +211,8 @@ Acesse a documentação interativa:
 # Testes
 ./gradlew test
 ```
+
+CI (GitHub Actions) executa automaticamente Spotless e o build (inclui Checkstyle). Veja `.github/workflows/ci.yml`.
 
 ### 📁 Estrutura do projeto
 
@@ -245,23 +251,20 @@ src/
 
 ### 🗄️ Migrations do Banco de Dados
 
-O projeto utiliza **Flyway** para versionamento do schema do banco de dados. As migrations estão localizadas em `src/main/resources/db/migration/`:
+O projeto utiliza **Flyway** para versionamento de schema do banco.
 
-- `V1__Initial_schema.sql` - Schema inicial (tabelas: users, classrooms, student_classes, invites)
-- `V2__Insert_initial_admin.sql` - Criação do usuário admin inicial
+- Local: `src/main/resources/db/migration`
+- Produção: `spring.flyway.enabled=true`, baseline e validação habilitadas
+- Desenvolvimento: `spring.flyway.enabled=false` com `ddl-auto=update`
+- Convenção: `V{n}__descricao.sql` (ex.: `V3__users_avatar_and_birthdate.sql`)
+- Criar nova migration: adicionar arquivo no diretório acima e validar localmente antes de deploy
 
-As migrations são executadas automaticamente na inicialização da aplicação em produção.
+> Para testar migrations em desenvolvimento, rode com `SPRING_PROFILES_ACTIVE=prod` ou habilite Flyway em `application-dev.properties`.
 
-### 📧 Sistema de Convites
+### 📝 Notas de Versão
 
-O sistema permite convidar novos usuários via email:
-
-1. **Criação de convite**: Gera token único e envia email HTML responsivo
-2. **Validação**: Verifica se o convite é válido e não expirado
-3. **Cadastro**: Usuário completa cadastro através do link do email
-4. **Expiração**: Convites têm prazo configurável (padrão: 24h)
-
-Os templates de email são responsivos e incluem branding da aplicação.
+- Release notes 1.2.0: `docs/release-notes/v1.2.0.md`
+- Histórico completo: `CHANGELOG.md`
 
 ## Licença
 
