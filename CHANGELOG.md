@@ -7,6 +7,41 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.3.0] - 2025-11-11
+
+### Adicionado
+
+- Gerenciamento completo de turmas do instrutor:
+  - `PATCH /classroom/{id}` para editar nome e status ativo
+  - `DELETE /classroom/{id}` para excluir turma
+  - `GET /classroom/{id}/students` para listar alunos com paginação, busca e filtro de `active`
+  - `PATCH /classroom/{id}/students/status` para alterar status de aluno na turma
+  - `DELETE /classroom/{id}/students` para remover aluno da turma
+- `StudentClassroomResponseDTO` para listagem eficiente de alunos (JPQL com constructor expression)
+
+### Alterado
+
+- Padronização de busca em alunos com `searchPattern` em minúsculas (`%termo%`)
+- Ajustes nos DTOs de sala (`ClassroomDTO`, `ClassroomDetailsResponseDTO`) para consistência
+
+### Corrigido
+
+- Tratamento consistente de `NotFoundException` quando turma/aluno não são encontrados
+- Ajuste em testes: criação de `User` com `id` via setter, não pelo builder
+
+### Técnico
+
+- Atualizações no `ClassroomService` e `StudentClassroomRepository` para suportar paginação e busca
+- Cobertura de testes ampliada em `ClassroomServiceTest` e `ClassroomControllerTest`
+
+### Notas
+
+- Sem breaking changes
+- Sem alterações no banco de dados
+- Para detalhes, consulte [docs/release-notes/v1.3.0.md](docs/release-notes/v1.3.0.md)
+
+---
+
 ## [1.2.0] - 2025-11-09
 
 ### Adicionado
