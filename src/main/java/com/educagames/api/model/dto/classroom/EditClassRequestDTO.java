@@ -1,23 +1,21 @@
 package com.educagames.api.model.dto.classroom;
 
-import java.util.List;
+import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClassroomDetailsDTO {
-
-    @Schema(description = "ID da turma", example = "1")
-    private Long id;
+public class EditClassRequestDTO {
 
     @Schema(description = "Nome da turma", example = "Turma de Java")
+    @Size(min = 2, max = 120, message = "O nome deve ter pelo menos 2 caracteres")
     private String name;
 
-    @Schema(description = "Lista de alunos da turma")
-    private List<StudentClassroomDTO> students;
+    @Schema(description = "Se a turma está ativa ou não", example = "true")
+    private Boolean active;
 }
