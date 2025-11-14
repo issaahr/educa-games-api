@@ -27,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.educagames.api.controller.v1.InviteController;
 import com.educagames.api.model.dto.invite.CreateInviteRequestDTO;
 import com.educagames.api.model.dto.invite.InviteDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;

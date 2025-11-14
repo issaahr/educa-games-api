@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.educagames.api.controller.v1.UserController;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;

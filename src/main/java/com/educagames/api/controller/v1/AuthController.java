@@ -1,4 +1,4 @@
-package com.educagames.api.controller;
+package com.educagames.api.controller.v1;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -34,7 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/v1/auth")
 @Tag(name = "Autenticação", description = "Endpoints para gerenciamento de autenticação")
 @RequiredArgsConstructor
 public class AuthController {

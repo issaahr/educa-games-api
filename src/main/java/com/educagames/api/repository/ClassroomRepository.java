@@ -10,12 +10,28 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
 import com.educagames.api.model.entity.Classroom ;
 
 @Repository
 public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
-    List<Classroom> findByInstructorId(Long instructorId);
+    @Query("""
+        SELECT new com.educagames.api.model.dto.classroom.ClassroomDTO(
+            c.id,
+            c.name,
+            c.active,
+            c.createdAt
+        )
+        FROM Classroom c
+        WHERE c.instructor.id = :instructorId
+          AND c.active = :active
+        ORDER BY c.createdAt DESC
+    """)
+    List<ClassroomDTO> findActiveClassroomsByInstructorId(
+        @Param("instructorId") Long instructorId,
+        @Param("active") boolean active
+    );
 
     @Query("""
     SELECT c FROM Classroom c

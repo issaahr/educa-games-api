@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.educagames.api.controller.v1.ClassroomController;
 import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;

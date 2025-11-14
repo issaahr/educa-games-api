@@ -1,4 +1,6 @@
-package com.educagames.api.controller;
+package com.educagames.api.controller.v1;
+
+import java.util.List;
 
 import jakarta.validation.Valid;
 
@@ -8,15 +10,30 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.educagames.api.model.dto.classroom.*;
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
+import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
+import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
+import com.educagames.api.model.dto.classroom.EditClassRequestDTO;
+import com.educagames.api.model.dto.classroom.StudentClassroomResponseDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
+import com.educagames.api.model.dto.shared.OnlyIdsDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.model.dto.user.ChangeUserStatusDTO;
+import com.educagames.api.repository.projection.CourseSummary;
 import com.educagames.api.service.ClassroomService;
+import com.educagames.api.service.CourseService;
 import com.educagames.api.util.ResponseUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,12 +46,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/classroom")
+@RequestMapping("/v1/classroom")
 @Tag(name = "Turmas", description = "Endpoints para gerenciamento de turmas")
 @RequiredArgsConstructor
 public class ClassroomController {
 
     private final ClassroomService classroomService;
+    private final CourseService courseService;
 
     @Operation(summary = "Cria uma nova turma", description = "Cria uma nova turma associada ao instrutor autenticado. Apenas INSTRUCTOR pode criar turmas.")
     @ApiResponses(value = {
@@ -275,4 +293,110 @@ public class ClassroomController {
         return ResponseUtils.ok(students, null);
     }
 
+    @Operation(summary = "Lista turmas disponíveis",
+        description = "Retorna as turmas disponíveis para vínculo de curso pelo instrutor autenticado.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de turmas disponível obtida com sucesso",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class),
+                examples = @ExampleObject(value = "{\"message\": null, \"data\": [{\"id\": 1, \"name\": \"Turma A\", \"active\": true, \"createdAt\": \"2025-10-07T12:34:56\"}]}"))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "403", description = "Sem permissão para listar turmas disponíveis",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}")))
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("/availableClasses")
+    public ResponseEntity<SuccessResponse<List<ClassroomDTO>>> getAvailableClasses(){
+        List<ClassroomDTO> classes = classroomService.getAvailableClasses();
+        return ResponseUtils.ok(classes, null);
+    }
+
+    @Operation(summary = "Desvincula curso da turma", description = "Remove o vínculo de um curso com a turma do instrutor autenticado.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Curso desvinculado com sucesso"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "403", description = "Sem permissão para desvincular curso",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "404", description = "Curso ou turma não encontrados",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = {
+                    @ExampleObject(name = "Curso", value = "{\"message\": \"Curso não encontrado\", \"errors\": null}"),
+                    @ExampleObject(name = "Turma", value = "{\"message\": \"Turma não encontrada\", \"errors\": null}")
+                }))
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @DeleteMapping("{id}/courses/{courseId}")
+    public ResponseEntity<Void> detachCourseFromClass(@PathVariable Long id, @PathVariable Long courseId){
+        classroomService.detachCourseFromClass(id, courseId);
+        return ResponseUtils.noContent();
+    }
+
+    @Operation(summary = "Vincula cursos à turma", description = "Vincula múltiplos cursos à turma do instrutor autenticado. Ignora cursos que já estejam vinculados ou que não pertençam ao instrutor.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Cursos vinculados com sucesso"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "403", description = "Sem permissão para vincular cursos",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "404", description = "Turma não encontrada",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Turma não encontrada\", \"errors\": null}")))
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @PostMapping("{id}/courses")
+    public ResponseEntity<Void> attachCourseToClass(@PathVariable Long id, @RequestBody OnlyIdsDTO request){
+        classroomService.attachCoursesToClass(id, request);
+        return ResponseUtils.noContent();
+    }
+
+    @Operation(summary = "Lista cursos da turma", description = "Retorna os cursos vinculados a uma turma do instrutor autenticado, com paginação e ordenação.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de cursos da turma obtida com sucesso",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class),
+                examples = @ExampleObject(value = "{\"message\": null, \"data\": {\"content\": [{\"id\": 1, \"title\": \"Curso de Java\", \"description\": \"Introdução ao Java\"}], \"totalElements\": 1, \"totalPages\": 1, \"size\": 10, \"number\": 0, \"first\": true, \"last\": true}}"))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "403", description = "Sem permissão para listar cursos da turma",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}"))),
+        @ApiResponse(responseCode = "404", description = "Turma não encontrada",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Turma não encontrada\", \"errors\": null}")))
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("{id}/courses")
+    public ResponseEntity<SuccessResponse<PageResponseDTO<CourseSummary>>> listCoursesByClass(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) String search,
+        @RequestParam(defaultValue = "title") String sortBy,
+        @RequestParam(defaultValue = "ASC") String sortDir
+    ){
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        PageResponseDTO<CourseSummary> courses = courseService.listCoursesByClass(id , search, pageable);
+        return ResponseUtils.ok(courses, null);
+    }
 }

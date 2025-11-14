@@ -66,4 +66,7 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "instructor", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Classroom> classroomsTaught = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "instructor", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Course> courses = new ArrayList<>();
 }
