@@ -1,7 +1,6 @@
 package com.educagames.api.model.entity;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,10 +20,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @Entity
 @Table(name="users")
 public class User extends BaseEntity {
@@ -46,9 +43,6 @@ public class User extends BaseEntity {
     private boolean active;
 
     @Column()
-    private LocalDateTime lastLogin;
-
-    @Column()
     private LocalDate birthDate;
 
     @Column(length = 500)
@@ -59,14 +53,14 @@ public class User extends BaseEntity {
 
     // Relations
     @Builder.Default
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "student", cascade = CascadeType.REMOVE)
     private List<StudentClassroom> studentClassrooms = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "instructor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "instructor", cascade = CascadeType.REMOVE)
     private List<Classroom> classroomsTaught = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "instructor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "instructor", cascade = CascadeType.REMOVE)
     private List<Course> courses = new ArrayList<>();
 }

@@ -23,19 +23,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Table(
     name = "invites",
     uniqueConstraints = @UniqueConstraint(columnNames = {"email", "classroom_id"})
 )
-
 public class Invite extends BaseEntity {
-    @Column(nullable = false)
+    @Column(nullable = false, length = 320)
     private String email;
 
     @Column(nullable = false, unique = true)

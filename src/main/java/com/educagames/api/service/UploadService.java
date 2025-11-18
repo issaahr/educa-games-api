@@ -28,6 +28,9 @@ public class UploadService {
     @Value("${storage.bucket}")
     private String bucketName;
 
+    @Value("${storage.lesson_bucket}")
+    private String lessonBucketName;
+
     @Value("${storage.key}")
     private String serviceKey;
 
@@ -73,6 +76,39 @@ public class UploadService {
     }
 
     /**
+     * Envia um arquivo de material de aula para o bucket de conteúdos de lição
+     * e retorna sua URL pública.
+     * Valida o content-type com base nos tipos permitidos.
+     */
+    public String uploadLessonContent(Long moduleId, Long lessonId, MultipartFile file) {
+        try {
+            String extension = getExtensionForLesson(file);
+            String filename = sanitizeFilename(file.getOriginalFilename(), extension);
+            String path = "modules/" + moduleId + "/lessons/" + lessonId + "/" + filename;
+
+            String url = storageUrl + "/storage/v1/object/" + lessonBucketName + "/" + path;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceKey);
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new MultipartInputStreamFileResource(
+                file.getInputStream(),
+                filename
+            ));
+
+            restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
+
+            return storageUrl + "/storage/v1/object/public/" + lessonBucketName + "/" + path;
+
+        } catch (Exception e) {
+            log.error("Erro ao fazer upload de material da lição {} do módulo {}: {}", lessonId, moduleId, e.getMessage());
+            throw new BadRequestException("Não foi possível salvar o arquivo do material.");
+        }
+    }
+
+    /**
      * Remove do storage o arquivo referenciado pela URL pública.
      * <p>
      * Ignora quando a URL é nula. Em caso de erro, registra um aviso e não lança exceção.
@@ -109,5 +145,25 @@ public class UploadService {
         if ("image/png".equals(ct)) return ".png";
         if ("image/jpeg".equals(ct) || "image/jpg".equals(ct)) return ".jpg";
         return ".png";
+    }
+
+    private String getExtensionForLesson(MultipartFile file) {
+        String ct = file.getContentType();
+        if ("image/png".equals(ct)) return ".png";
+        if ("image/jpeg".equals(ct) || "image/jpg".equals(ct)) return ".jpg";
+        if ("image/gif".equals(ct)) return ".gif";
+        if ("image/webp".equals(ct)) return ".webp";
+        if ("application/pdf".equals(ct)) return ".pdf";
+        if ("application/zip".equals(ct)) return ".zip";
+        return ".bin";
+    }
+
+    private String sanitizeFilename(String original, String extension) {
+        String base = (original != null ? original : "file")
+            .replaceAll("[^a-zA-Z0-9._-]", "_");
+        // Remover extensão duplicada e acrescentar timestamp para unicidade
+        int dot = base.lastIndexOf('.');
+        if (dot > 0) base = base.substring(0, dot);
+        return System.currentTimeMillis() + "-" + base + extension;
     }
 }

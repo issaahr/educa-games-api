@@ -205,6 +205,7 @@ public class InviteService {
 
         invite.setLastResendAt(LocalDateTime.now());
         invite.setResendCount(invite.getResendCount() + 1);
+        invite.setExpiresAt(LocalDateTime.now().plusHours(expirationHours));
         inviteRepository.save(invite);
 
         this.sendInviteEmail(invite);

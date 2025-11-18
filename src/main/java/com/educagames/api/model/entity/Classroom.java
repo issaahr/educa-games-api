@@ -31,11 +31,11 @@ public class Classroom extends BaseEntity {
     private User instructor;
 
     @Builder.Default
-    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "classroom", cascade = CascadeType.REMOVE)
     private List<StudentClassroom> students = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "classroom", cascade = CascadeType.REMOVE)
     private List<Invite> invites = new ArrayList<>();
 
     @Builder.Default

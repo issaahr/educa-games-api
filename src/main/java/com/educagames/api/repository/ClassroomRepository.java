@@ -50,19 +50,20 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     Optional<Classroom> findOneByIdAndInstructorId(Long id, Long instructorId);
 
     @Query("""
-        SELECT new com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO(
-            c.id,
-            c.name,
-            c.createdAt,
-            COUNT(sc),
-            0L,
-            c.active
-        )
-        FROM Classroom c
-        LEFT JOIN c.students sc
-        WHERE c.id = :classroomId
-          AND c.instructor.id = :instructorId
-        GROUP BY c.id, c.name, c.createdAt, c.active
+       SELECT new com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO(
+           c.id,
+           c.name,
+           c.createdAt,
+           COUNT(DISTINCT sc.id),
+           COUNT(DISTINCT cs.id),
+           c.active
+       )
+       FROM Classroom c
+       LEFT JOIN c.students sc
+       LEFT JOIN c.courses cs
+       WHERE c.id = :classroomId
+         AND c.instructor.id = :instructorId
+       GROUP BY c.id, c.name, c.createdAt, c.active
     """)
     Optional<ClassroomDetailsResponseDTO> findClassroomDetailsByIdAndInstructorId(
         @Param("classroomId") Long classroomId,
