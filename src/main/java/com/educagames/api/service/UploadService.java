@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.educagames.api.exception.BadRequestException;
 import com.educagames.api.util.MultipartInputStreamFileResource;
+import com.educagames.api.util.MultipartInputStreamFileResourceWithContentType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,8 @@ public class UploadService {
      */
     public String uploadLessonContent(Long moduleId, Long lessonId, MultipartFile file) {
         try {
+            String originalContentType = file.getContentType();
+            String correctedContentType = getCorrectedContentType(file, originalContentType);
             String extension = getExtensionForLesson(file);
             String filename = sanitizeFilename(file.getOriginalFilename(), extension);
             String path = "modules/" + moduleId + "/lessons/" + lessonId + "/" + filename;
@@ -101,10 +104,13 @@ public class UploadService {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new MultipartInputStreamFileResource(
-                file.getInputStream(),
-                filename
-            ));
+            MultipartInputStreamFileResourceWithContentType fileResource =
+                new MultipartInputStreamFileResourceWithContentType(
+                    file.getInputStream(),
+                    filename,
+                    correctedContentType
+                );
+            body.add("file", fileResource);
 
             restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
 
@@ -140,6 +146,35 @@ public class UploadService {
     }
 
     /**
+     * Remove do storage o arquivo de material de aula referenciado pela URL pública.
+     * <p>
+     * Ignora quando a URL é nula. Em caso de erro, registra um aviso e não lança exceção.
+     *
+     * @param publicUrl URL pública do arquivo de material de aula
+     */
+    public void deleteLessonFile(String publicUrl) {
+        try {
+            if (publicUrl == null || publicUrl.isEmpty()) return;
+
+            int bucketIndex = publicUrl.indexOf(lessonBucketName);
+            if (bucketIndex == -1) {
+                log.warn("URL de arquivo de material de aula não contém o nome do bucket: {}", publicUrl);
+                return;
+            }
+
+            String relativePath = publicUrl.substring(bucketIndex + lessonBucketName.length() + 1);
+            String url = storageUrl + "/storage/v1/object/" + lessonBucketName + "/" + relativePath;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceKey);
+
+            restTemplate.exchange(url, HttpMethod.DELETE, new HttpEntity<>(headers), String.class);
+        } catch (Exception e) {
+            log.error("Erro ao deletar arquivo de material de aula do storage. URL: {}", publicUrl, e);
+        }
+    }
+
+    /**
      * Determina a extensão do arquivo com base em seu content-type.
      * <p>
      * Mapeia `image/png` para `.png` e `image/jpeg`/`image/jpg` para `.jpg`. Em
@@ -165,14 +200,60 @@ public class UploadService {
      * @param file arquivo multipart
      * @return extensão do arquivo (inclui o ponto) ou `.bin` por padrão
      */
+    private String getCorrectedContentType(MultipartFile file, String originalContentType) {
+        if (originalContentType != null && !"application/octet-stream".equals(originalContentType)) {
+            return originalContentType;
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null) {
+            return originalContentType != null ? originalContentType : "application/octet-stream";
+        }
+
+        String lowerFilename = filename.toLowerCase();
+        if (lowerFilename.endsWith(".zip")) {
+            return "application/zip";
+        }
+        if (lowerFilename.endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        if (lowerFilename.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+        if (lowerFilename.endsWith(".gif")) {
+            return "image/gif";
+        }
+        if (lowerFilename.endsWith(".webp")) {
+            return "image/webp";
+        }
+
+        return originalContentType != null ? originalContentType : "application/octet-stream";
+    }
+
     private String getExtensionForLesson(MultipartFile file) {
         String ct = file.getContentType();
-        if ("image/png".equals(ct)) return ".png";
-        if ("image/jpeg".equals(ct) || "image/jpg".equals(ct)) return ".jpg";
-        if ("image/gif".equals(ct)) return ".gif";
-        if ("image/webp".equals(ct)) return ".webp";
-        if ("application/pdf".equals(ct)) return ".pdf";
-        if ("application/zip".equals(ct)) return ".zip";
+        String correctedCt = getCorrectedContentType(file, ct);
+        if ("image/png".equals(correctedCt)) return ".png";
+        if ("image/jpeg".equals(correctedCt) || "image/jpg".equals(correctedCt)) return ".jpg";
+        if ("image/gif".equals(correctedCt)) return ".gif";
+        if ("image/webp".equals(correctedCt)) return ".webp";
+        if ("application/pdf".equals(correctedCt)) return ".pdf";
+        if ("application/zip".equals(correctedCt) || "application/x-zip-compressed".equals(correctedCt)) return ".zip";
+
+        String filename = file.getOriginalFilename();
+        if (filename != null) {
+            String lowerFilename = filename.toLowerCase();
+            if (lowerFilename.endsWith(".zip")) return ".zip";
+            if (lowerFilename.endsWith(".pdf")) return ".pdf";
+            if (lowerFilename.endsWith(".png")) return ".png";
+            if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) return ".jpg";
+            if (lowerFilename.endsWith(".gif")) return ".gif";
+            if (lowerFilename.endsWith(".webp")) return ".webp";
+        }
+
         return ".bin";
     }
 
