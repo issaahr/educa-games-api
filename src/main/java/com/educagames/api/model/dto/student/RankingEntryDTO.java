@@ -1,6 +1,7 @@
 package com.educagames.api.model.dto.student;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -38,4 +39,7 @@ public class RankingEntryDTO {
 
     @Schema(description = "Data e hora do último acesso do aluno", example = "2025-11-18T10:30:00")
     private LocalDateTime lastAccessAt;
+
+    @Schema(description = "Últimas badges conquistadas (máximo 2)", example = "[{\"type\": \"three_days_streak\", \"earnedAt\": \"2025-11-19T10:30:00\"}]")
+    private List<BadgeDTO> latestBadges;
 }

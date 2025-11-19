@@ -72,6 +72,7 @@ public class StudentService {
     private final ClassroomRepository classroomRepository;
     private final QuizService quizService;
     private final AnnouncementService announcementService;
+    private final BadgeService badgeService;
 
     /**
      * Obtém a turma selecionada do aluno autenticado.
@@ -113,10 +114,10 @@ public class StudentService {
         StudentClassroom studentClassroom = getSelectedClassroom();
         Classroom classroom = studentClassroom.getClassroom();
 
-        Integer totalScore = calculateTotalScore(student);
+        Integer totalScore = calculateTotalScore(student, classroom);
         Integer rank = calculateRank(student, classroom);
         Integer loginStreak = studentClassroom.getActualLoginStreak();
-        Long completedModules = studentModuleProgressRepository.countCompletedModulesByStudent(student);
+        Long completedModules = countCompletedModulesForClassroom(student, classroom);
         Long totalModules = countTotalModulesForClassroom(classroom);
 
         return StudentDashboardDTO.builder()
@@ -451,9 +452,9 @@ public class StudentService {
             .sum();
 
         moduleProgress.setCompletedQuiz(true);
-        // Soma os pontos das aulas + pontos do quiz
         moduleProgress.setPointsEarned(totalLessonPoints + totalPoints);
         studentModuleProgressRepository.save(moduleProgress);
+        badgeService.checkAndAwardFirstModuleBadge(student, classroom);
 
         return totalPoints;
     }
@@ -517,7 +518,7 @@ public class StudentService {
         List<RankingEntryDTO> ranking = allStudents.stream()
             .map(sc -> {
                 User student = sc.getStudent();
-                Integer score = calculateTotalScore(student);
+                Integer score = calculateTotalScore(student, classroom);
                 return RankingEntryDTO.builder()
                     .studentId(student.getId())
                     .studentName(student.getName())
@@ -525,6 +526,7 @@ public class StudentService {
                     .rank(0)
                     .loginStreak(sc.getActualLoginStreak())
                     .lastAccessAt(sc.getLastAccessAt())
+                    .latestBadges(badgeService.getLatestBadgesForStudent(student, classroom, 2))
                     .build();
             })
             .sorted(Comparator.comparing(RankingEntryDTO::getScore).reversed()
@@ -565,7 +567,7 @@ public class StudentService {
     @Transactional(readOnly = true)
     public List<RankingEntryDTO> getClassroomRanking(Long classroomId) {
         User instructor = authService.getAuthenticatedUser();
-        classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
             .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
 
         List<StudentClassroom> allStudents = studentClassroomRepository
@@ -577,7 +579,7 @@ public class StudentService {
         List<RankingEntryDTO> ranking = allStudents.stream()
             .map(sc -> {
                 User student = sc.getStudent();
-                Integer score = calculateTotalScore(student);
+                Integer score = calculateTotalScore(student, classroom);
                 return RankingEntryDTO.builder()
                     .studentId(student.getId())
                     .studentName(student.getName())
@@ -585,6 +587,7 @@ public class StudentService {
                     .rank(0)
                     .loginStreak(sc.getActualLoginStreak())
                     .lastAccessAt(sc.getLastAccessAt())
+                    .latestBadges(badgeService.getLatestBadgesForStudent(student, classroom, 2))
                     .build();
             })
             .sorted(Comparator.comparing(RankingEntryDTO::getScore).reversed()
@@ -599,18 +602,25 @@ public class StudentService {
     }
 
     /**
-     * Calcula a pontuação total de um aluno.
-     * <p>
-     * Soma os pontos de todos os módulos concluídos, que já incluem
-     * os pontos das aulas e do quiz.
-     * </p>
+     * Calcula a pontuação total de um aluno considerando apenas os módulos acessíveis à turma.
      *
      * @param student aluno cuja pontuação será calculada
-     * @return pontuação total do aluno (0 se não houver pontos)
+     * @param classroom turma para filtrar os módulos
+     * @return pontuação total do aluno na turma (0 se não houver pontos)
      */
-    private Integer calculateTotalScore(User student) {
-        Integer modulePoints = studentModuleProgressRepository.sumPointsEarnedByStudent(student);
-        return modulePoints != null ? modulePoints : 0;
+    private Integer calculateTotalScore(User student, Classroom classroom) {
+        List<Module> accessibleModules = classroom.getCourses().stream()
+            .flatMap(course -> courseModuleRepository.findByCourseId(course.getId()).stream())
+            .map(CourseModule::getModule)
+            .distinct()
+            .toList();
+
+        List<StudentModuleProgress> progressList = studentModuleProgressRepository.findByStudent(student);
+
+        return progressList.stream()
+            .filter(progress -> accessibleModules.contains(progress.getModule()))
+            .mapToInt(progress -> progress.getPointsEarned() != null ? progress.getPointsEarned() : 0)
+            .sum();
     }
 
     /**
@@ -634,7 +644,7 @@ public class StudentService {
         List<RankingEntryDTO> ranking = allStudents.stream()
             .map(sc -> {
                 User s = sc.getStudent();
-                Integer score = calculateTotalScore(s);
+                Integer score = calculateTotalScore(s, classroom);
                 return RankingEntryDTO.builder()
                     .studentId(s.getId())
                     .studentName(s.getName())
@@ -661,9 +671,6 @@ public class StudentService {
 
     /**
      * Conta o total de módulos disponíveis para uma turma.
-     * <p>
-     * Soma o número de módulos de todos os cursos vinculados à turma.
-     * </p>
      *
      * @param classroom turma para a qual contar os módulos
      * @return total de módulos disponíveis para a turma
@@ -672,6 +679,28 @@ public class StudentService {
         return classroom.getCourses().stream()
             .mapToLong(course -> courseModuleRepository.findByCourseId(course.getId()).size())
             .sum();
+    }
+
+    /**
+     * Conta os módulos completados por um aluno considerando apenas os módulos acessíveis à turma.
+     *
+     * @param student aluno cujos módulos serão contados
+     * @param classroom turma para filtrar os módulos
+     * @return número de módulos completados na turma
+     */
+    private Long countCompletedModulesForClassroom(User student, Classroom classroom) {
+        List<Module> accessibleModules = classroom.getCourses().stream()
+            .flatMap(course -> courseModuleRepository.findByCourseId(course.getId()).stream())
+            .map(CourseModule::getModule)
+            .distinct()
+            .toList();
+
+        List<StudentModuleProgress> progressList = studentModuleProgressRepository.findByStudent(student);
+
+        return progressList.stream()
+            .filter(progress -> accessibleModules.contains(progress.getModule()))
+            .filter(progress -> progress.isCompletedLessons() && progress.isCompletedQuiz())
+            .count();
     }
 
     /**
@@ -762,6 +791,11 @@ public class StudentService {
             studentClassroom.setLastStreakDate(today);
             studentClassroom.setLastAccessAt(LocalDateTime.now());
             studentClassroomRepository.save(studentClassroom);
+            badgeService.checkAndAwardStreakBadges(
+                studentClassroom.getStudent(),
+                studentClassroom.getClassroom(),
+                newStreak
+            );
             return true;
         }
 

@@ -353,10 +353,7 @@ public class ClassroomService {
 
         User student = studentClassroom.getStudent();
 
-        // Calcula pontuação total
-        Integer totalScore = calculateTotalScore(student);
-
-        // Calcula ranking na turma
+        Integer totalScore = calculateTotalScore(student, classroom);
         Integer rank = calculateRank(student, classroom);
 
         return StudentProfileDTO.builder()
@@ -376,18 +373,25 @@ public class ClassroomService {
     }
 
     /**
-     * Calcula a pontuação total de um aluno.
-     * <p>
-     * Soma os pontos de todos os módulos concluídos, que já incluem
-     * os pontos das aulas e do quiz.
-     * </p>
+     * Calcula a pontuação total de um aluno considerando apenas os módulos acessíveis à turma.
      *
      * @param student aluno cuja pontuação será calculada
-     * @return pontuação total do aluno (0 se não houver pontos)
+     * @param classroom turma para filtrar os módulos
+     * @return pontuação total do aluno na turma (0 se não houver pontos)
      */
-    private Integer calculateTotalScore(User student) {
-        Integer modulePoints = studentModuleProgressRepository.sumPointsEarnedByStudent(student);
-        return modulePoints != null ? modulePoints : 0;
+    private Integer calculateTotalScore(User student, Classroom classroom) {
+        List<Module> accessibleModules = classroom.getCourses().stream()
+            .flatMap(course -> courseModuleRepository.findByCourseId(course.getId()).stream())
+            .map(CourseModule::getModule)
+            .distinct()
+            .toList();
+
+        List<StudentModuleProgress> progressList = studentModuleProgressRepository.findByStudent(student);
+
+        return progressList.stream()
+            .filter(progress -> accessibleModules.contains(progress.getModule()))
+            .mapToInt(progress -> progress.getPointsEarned() != null ? progress.getPointsEarned() : 0)
+            .sum();
     }
 
     /**
@@ -411,7 +415,7 @@ public class ClassroomService {
         List<RankingEntryDTO> ranking = allStudents.stream()
             .map(sc -> {
                 User s = sc.getStudent();
-                Integer score = calculateTotalScore(s);
+                Integer score = calculateTotalScore(s, classroom);
                 return RankingEntryDTO.builder()
                     .studentId(s.getId())
                     .studentName(s.getName())
@@ -447,7 +451,7 @@ public class ClassroomService {
     @Transactional(readOnly = true)
     public List<StudentReportDTO> getClassroomReport(Long classroomId) {
         User instructor = authService.getAuthenticatedUser();
-        classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
             .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
 
         // Busca todos os alunos ativos da turma
@@ -550,7 +554,7 @@ public class ClassroomService {
         List<StudentReportDTO> report = allStudents.stream()
             .map(sc -> {
                 User student = sc.getStudent();
-                Integer score = calculateTotalScore(student);
+                Integer score = calculateTotalScore(student, classroom);
                 String currentModule = findCurrentModule.apply(student);
 
                 return StudentReportDTO.builder()
