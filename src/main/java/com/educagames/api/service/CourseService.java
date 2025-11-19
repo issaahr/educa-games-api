@@ -28,9 +28,14 @@ public class CourseService {
     private final AuthService authService;
 
     /**
-     *  Cria um curso associado ao professor autenticado
-     * @param dto
-     * @return id do curso criado
+     * Cria um curso associado ao instrutor autenticado.
+     * <p>
+     * Opcionalmente vincula o curso a uma turma do instrutor.
+     * </p>
+     *
+     * @param dto DTO contendo os dados do curso (título, descrição e ID da turma opcional)
+     * @return ID do curso criado
+     * @throws NotFoundException se a turma informada não for encontrada ou não pertencer ao instrutor
      */
     public Long createCourse(CreateCourseRequestDTO dto) {
         User instructor = authService.getAuthenticatedUser();
@@ -51,8 +56,9 @@ public class CourseService {
     }
 
     /**
-     * Lista cursos associados ao professor autenticado
-     * @return Lista de cursos
+     * Lista todos os cursos associados ao instrutor autenticado.
+     *
+     * @return lista de resumos dos cursos do instrutor
      */
     public List<CourseSummary> listCourses() {
         User instructor = authService.getAuthenticatedUser();
@@ -101,8 +107,13 @@ public class CourseService {
     }
 
     /**
-     * Deleta um curso associado ao professor autenticado
-     * @param dto
+     * Remove um curso do instrutor autenticado.
+     * <p>
+     * Remove também todos os vínculos com turmas e módulos associados.
+     * </p>
+     *
+     * @param dto DTO contendo o ID do curso a ser removido
+     * @throws NotFoundException se o curso não for encontrado ou não pertencer ao instrutor
      */
     public void deleteCourse(OnlyIdDTO dto) {
         User instructor = authService.getAuthenticatedUser();

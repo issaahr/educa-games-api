@@ -76,9 +76,17 @@ public class UploadService {
     }
 
     /**
-     * Envia um arquivo de material de aula para o bucket de conteúdos de lição
-     * e retorna sua URL pública.
-     * Valida o content-type com base nos tipos permitidos.
+     * Envia um arquivo de material de aula para o bucket de conteúdos de lição e retorna sua URL pública.
+     * <p>
+     * Valida o content-type com base nos tipos permitidos. Em caso de falha de I/O ou resposta
+     * inválida do provedor, uma {@link BadRequestException} é lançada.
+     * </p>
+     *
+     * @param moduleId ID do módulo
+     * @param lessonId ID da aula
+     * @param file     arquivo multipart do material
+     * @return URL pública do arquivo salvo
+     * @throws BadRequestException em erros de upload
      */
     public String uploadLessonContent(Long moduleId, Long lessonId, MultipartFile file) {
         try {
@@ -147,6 +155,16 @@ public class UploadService {
         return ".png";
     }
 
+    /**
+     * Determina a extensão do arquivo de material de aula com base em seu content-type.
+     * <p>
+     * Mapeia content-types de imagens, PDF e ZIP para suas respectivas extensões.
+     * Retorna `.bin` como padrão se o content-type não for reconhecido.
+     * </p>
+     *
+     * @param file arquivo multipart
+     * @return extensão do arquivo (inclui o ponto) ou `.bin` por padrão
+     */
     private String getExtensionForLesson(MultipartFile file) {
         String ct = file.getContentType();
         if ("image/png".equals(ct)) return ".png";
@@ -158,6 +176,17 @@ public class UploadService {
         return ".bin";
     }
 
+    /**
+     * Sanitiza o nome do arquivo removendo caracteres especiais e adiciona timestamp para unicidade.
+     * <p>
+     * Remove caracteres não alfanuméricos (exceto ponto, underscore e hífen),
+     * remove extensão duplicada e adiciona timestamp no início do nome.
+     * </p>
+     *
+     * @param original nome original do arquivo
+     * @param extension extensão do arquivo (inclui o ponto)
+     * @return nome sanitizado com timestamp e extensão
+     */
     private String sanitizeFilename(String original, String extension) {
         String base = (original != null ? original : "file")
             .replaceAll("[^a-zA-Z0-9._-]", "_");

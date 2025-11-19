@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.educagames.api.exception.BadRequestException;
 import com.educagames.api.exception.NotFoundException;
+import com.educagames.api.model.dto.announcement.AnnouncementResponseDTO;
 import com.educagames.api.model.dto.lesson.ResourceDTO;
 import com.educagames.api.model.dto.quiz.QuizDTO;
 import com.educagames.api.model.dto.student.CompleteQuizRequestDTO;
@@ -70,6 +71,7 @@ public class StudentService {
     private final LessonMaterialRepository lessonMaterialRepository;
     private final ClassroomRepository classroomRepository;
     private final QuizService quizService;
+    private final AnnouncementService announcementService;
 
     /**
      * Obtém a turma selecionada do aluno autenticado.
@@ -537,6 +539,23 @@ public class StudentService {
     }
 
     /**
+     * Obtém os avisos da turma selecionada do aluno autenticado.
+     * <p>
+     * Retorna os avisos direcionados para a turma mais recentemente acessada pelo aluno,
+     * ordenados por data de criação (mais recentes primeiro).
+     * </p>
+     *
+     * @return lista de avisos convertidos para DTO
+     * @throws NotFoundException se o aluno não tiver turma ativa
+     */
+    @Transactional(readOnly = true)
+    public List<AnnouncementResponseDTO> getAnnouncements() {
+        StudentClassroom studentClassroom = getSelectedClassroom();
+        Classroom classroom = studentClassroom.getClassroom();
+        return announcementService.getAnnouncementsByClassroom(classroom);
+    }
+
+    /**
      * Obtém o ranking de uma turma (para instrutor).
      *
      * @param classroomId ID da turma
@@ -579,12 +598,32 @@ public class StudentService {
         return ranking;
     }
 
+    /**
+     * Calcula a pontuação total de um aluno.
+     * <p>
+     * Soma os pontos de todos os módulos concluídos, que já incluem
+     * os pontos das aulas e do quiz.
+     * </p>
+     *
+     * @param student aluno cuja pontuação será calculada
+     * @return pontuação total do aluno (0 se não houver pontos)
+     */
     private Integer calculateTotalScore(User student) {
-        // Usa apenas os pontos dos módulos, que já incluem aulas + quiz
         Integer modulePoints = studentModuleProgressRepository.sumPointsEarnedByStudent(student);
         return modulePoints != null ? modulePoints : 0;
     }
 
+    /**
+     * Calcula a posição do aluno no ranking da turma.
+     * <p>
+     * Ordena todos os alunos ativos da turma por pontuação (maior para menor)
+     * e retorna a posição do aluno especificado.
+     * </p>
+     *
+     * @param student   aluno cujo ranking será calculado
+     * @param classroom turma para a qual calcular o ranking
+     * @return posição do aluno no ranking (1 = primeiro lugar)
+     */
     private Integer calculateRank(User student, Classroom classroom) {
         List<StudentClassroom> allStudents = studentClassroomRepository
             .findAll()
@@ -620,18 +659,48 @@ public class StudentService {
             .orElse(ranking.size() + 1);
     }
 
+    /**
+     * Conta o total de módulos disponíveis para uma turma.
+     * <p>
+     * Soma o número de módulos de todos os cursos vinculados à turma.
+     * </p>
+     *
+     * @param classroom turma para a qual contar os módulos
+     * @return total de módulos disponíveis para a turma
+     */
     private Long countTotalModulesForClassroom(Classroom classroom) {
         return classroom.getCourses().stream()
             .mapToLong(course -> courseModuleRepository.findByCourseId(course.getId()).size())
             .sum();
     }
 
+    /**
+     * Verifica se um módulo está acessível para uma turma.
+     * <p>
+     * Um módulo é acessível se estiver vinculado a algum curso da turma.
+     * </p>
+     *
+     * @param module    módulo a ser verificado
+     * @param classroom turma para a qual verificar acesso
+     * @return true se o módulo estiver acessível, false caso contrário
+     */
     private boolean isModuleAccessible(Module module, Classroom classroom) {
         return classroom.getCourses().stream()
             .flatMap(course -> courseModuleRepository.findByCourseId(course.getId()).stream())
             .anyMatch(cm -> cm.getModule().getId().equals(module.getId()));
     }
 
+    /**
+     * Verifica se um módulo está desbloqueado baseado no progresso do módulo anterior.
+     * <p>
+     * Um módulo está desbloqueado se o módulo anterior foi completamente concluído
+     * (todas as aulas e o quiz).
+     * </p>
+     *
+     * @param previousModule   módulo anterior
+     * @param previousProgress progresso do módulo anterior
+     * @return true se o módulo estiver desbloqueado, false caso contrário
+     */
     private boolean isModuleUnlocked(Module previousModule, StudentModuleProgress previousProgress) {
         if (previousProgress == null) {
             return false;
@@ -639,6 +708,12 @@ public class StudentService {
         return previousProgress.isCompletedLessons() && previousProgress.isCompletedQuiz();
     }
 
+    /**
+     * Converte um MaterialType enum para sua representação em string.
+     *
+     * @param t tipo de material a ser convertido
+     * @return string representando o tipo (pdf, zip, image, link) ou "link" como padrão
+     */
     private String materialTypeToString(MaterialType t) {
         if (t == null) return "link";
         return switch (t) {
@@ -649,6 +724,16 @@ public class StudentService {
         };
     }
 
+    /**
+     * Atualiza a sequência de login diário do aluno.
+     * <p>
+     * Incrementa a sequência se o último acesso foi ontem, reinicia se foi antes de ontem,
+     * ou mantém se já acessou hoje. Atualiza também o recorde de sequência se necessário.
+     * </p>
+     *
+     * @param studentClassroom vínculo do aluno com a turma
+     * @return true se a sequência foi incrementada ou reiniciada, false se já acessou hoje
+     */
     private boolean updateLoginStreak(StudentClassroom studentClassroom) {
         LocalDate today = LocalDate.now();
         LocalDate lastStreakDate = studentClassroom.getLastStreakDate();
@@ -687,6 +772,17 @@ public class StudentService {
         return true;
     }
 
+    /**
+     * Atualiza o progresso de um módulo para um aluno.
+     * <p>
+     * Verifica se todas as aulas foram concluídas e atualiza o status do módulo.
+     * Recalcula os pontos do módulo somando os pontos das aulas concluídas.
+     * Se o quiz já foi concluído, mantém os pontos do quiz na soma total.
+     * </p>
+     *
+     * @param module  módulo cujo progresso será atualizado
+     * @param student aluno cujo progresso será atualizado
+     */
     private void updateModuleProgress(Module module, User student) {
         List<Lesson> lessons = lessonRepository.findByModuleOrderByOrderIndexAsc(module);
         List<StudentLessonProgress> lessonProgressList = studentLessonProgressRepository

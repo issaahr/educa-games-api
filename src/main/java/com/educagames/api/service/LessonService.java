@@ -59,6 +59,15 @@ public class LessonService {
         }
     }
 
+    /**
+     * Salva os materiais de uma aula a partir de uma lista de recursos.
+     * <p>
+     * Filtra recursos que não são do YouTube e cria entidades LessonMaterial para cada um.
+     * </p>
+     *
+     * @param lesson   aula à qual os materiais serão associados
+     * @param resources lista de recursos DTO contendo os materiais
+     */
     private void saveLessonMaterials(Lesson lesson, List<ResourceDTO> resources) {
         List<ResourceDTO> materials = filterNonYoutubeResources(resources);
         for (ResourceDTO r : materials) {
@@ -117,6 +126,13 @@ public class LessonService {
         }
     }
 
+    /**
+     * Atualiza os campos de uma aula a partir de um DTO.
+     *
+     * @param lesson     aula a ser atualizada
+     * @param dto        DTO com os novos dados da aula
+     * @param orderIndex índice de ordenação da aula no módulo
+     */
     private void updateLessonFromDto(Lesson lesson, LessonRequestDTO dto, int orderIndex) {
         lesson.setOrderIndex(orderIndex);
         lesson.setTitle(Optional.ofNullable(dto.getTitle()).orElse(""));
@@ -125,6 +141,16 @@ public class LessonService {
         lesson.setVideoLink(Optional.ofNullable(extractYoutubeUrl(dto.getResources())).orElse(""));
     }
 
+    /**
+     * Atualiza os materiais de uma aula a partir de uma lista de recursos.
+     * <p>
+     * Materiais com ID são atualizados, sem ID são criados, e materiais existentes
+     * não presentes na lista são removidos.
+     * </p>
+     *
+     * @param lesson   aula cujos materiais serão atualizados
+     * @param resources lista de recursos DTO contendo os materiais
+     */
     private void updateLessonMaterials(Lesson lesson, List<ResourceDTO> resources) {
         List<ResourceDTO> materials = filterNonYoutubeResources(resources);
         List<LessonMaterial> existingMaterials = lessonMaterialRepository.findByLesson(lesson);

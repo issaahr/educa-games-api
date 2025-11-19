@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.educagames.api.model.dto.announcement.AnnouncementResponseDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.SuccessResponse;
 import com.educagames.api.model.dto.student.CompleteQuizRequestDTO;
@@ -447,5 +448,34 @@ public class StudentController {
     public ResponseEntity<SuccessResponse<List<RankingEntryDTO>>> getRanking() {
         List<RankingEntryDTO> ranking = studentService.getRanking();
         return ResponseUtils.ok(ranking, null);
+    }
+
+    @Operation(
+        summary = "Lista avisos da turma do aluno",
+        description = "Retorna lista de avisos direcionados para a turma mais recentemente acessada pelo aluno, ordenados por data de criação (mais recentes primeiro)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Lista de avisos obtida com sucesso",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Nenhuma turma ativa encontrada",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/announcements")
+    public ResponseEntity<SuccessResponse<List<AnnouncementResponseDTO>>> getAnnouncements() {
+        List<AnnouncementResponseDTO> announcements = studentService.getAnnouncements();
+        return ResponseUtils.ok(announcements, null);
     }
 }

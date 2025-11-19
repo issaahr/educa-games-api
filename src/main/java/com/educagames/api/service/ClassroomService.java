@@ -261,8 +261,9 @@ public class ClassroomService {
     }
 
     /**
-     * Lista as turmas ativas associadas ao professor autenticado
-     * @return Lista de turmas ativas
+     * Lista as turmas ativas associadas ao instrutor autenticado.
+     *
+     * @return lista de turmas ativas do instrutor
      */
     public List<ClassroomDTO> getAvailableClasses(){
         User instructor = authService.getAuthenticatedUser();
@@ -374,11 +375,32 @@ public class ClassroomService {
             .build();
     }
 
+    /**
+     * Calcula a pontuação total de um aluno.
+     * <p>
+     * Soma os pontos de todos os módulos concluídos, que já incluem
+     * os pontos das aulas e do quiz.
+     * </p>
+     *
+     * @param student aluno cuja pontuação será calculada
+     * @return pontuação total do aluno (0 se não houver pontos)
+     */
     private Integer calculateTotalScore(User student) {
         Integer modulePoints = studentModuleProgressRepository.sumPointsEarnedByStudent(student);
         return modulePoints != null ? modulePoints : 0;
     }
 
+    /**
+     * Calcula a posição do aluno no ranking da turma.
+     * <p>
+     * Ordena todos os alunos ativos da turma por pontuação (maior para menor)
+     * e retorna a posição do aluno especificado.
+     * </p>
+     *
+     * @param student   aluno cujo ranking será calculado
+     * @param classroom turma para a qual calcular o ranking
+     * @return posição do aluno no ranking (1 = primeiro lugar)
+     */
     private Integer calculateRank(User student, Classroom classroom) {
         List<StudentClassroom> allStudents = studentClassroomRepository
             .findAll()
