@@ -25,6 +25,7 @@ import com.educagames.api.model.enums.MaterialType;
 import com.educagames.api.repository.LessonMaterialRepository;
 import com.educagames.api.repository.LessonRepository;
 import com.educagames.api.repository.ModuleRepository;
+import com.educagames.api.repository.StudentLessonProgressRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +36,7 @@ public class LessonService {
     private final ModuleRepository moduleRepository;
     private final LessonRepository lessonRepository;
     private final LessonMaterialRepository lessonMaterialRepository;
+    private final StudentLessonProgressRepository studentLessonProgressRepository;
     private final AuthService authService;
     private final UploadService uploadService;
 
@@ -103,9 +105,16 @@ public class LessonService {
             }
         }
 
-        existingLessons.stream()
+        List<Lesson> lessonsToDelete = existingLessons.stream()
             .filter(l -> l.getId() == null || !keepLessonIds.contains(l.getId()))
-            .forEach(lessonRepository::delete);
+            .toList();
+
+        for (Lesson lesson : lessonsToDelete) {
+            studentLessonProgressRepository.deleteAll(
+                studentLessonProgressRepository.findByLesson(lesson)
+            );
+            lessonRepository.delete(lesson);
+        }
     }
 
     private void updateLessonFromDto(Lesson lesson, LessonRequestDTO dto, int orderIndex) {
@@ -131,7 +140,11 @@ public class LessonService {
                 mat.setLesson(lesson);
             }
             mat.setName(Optional.ofNullable(r.getLabel()).orElse(""));
-            mat.setType(mapMaterialType(r.getType()));
+            if (r.getType() != null && !r.getType().trim().isEmpty()) {
+                mat.setType(mapMaterialType(r.getType()));
+            } else if (mat.getId() == null) {
+                mat.setType(MaterialType.LINK);
+            }
             mat.setUrl(Optional.ofNullable(r.getContent()).orElse(""));
             lessonMaterialRepository.save(mat);
             if (mat.getId() != null) keepMaterialIds.add(mat.getId());
@@ -288,7 +301,10 @@ public class LessonService {
      * @return MaterialType correspondente ou LINK como padrão
      */
     public MaterialType mapMaterialType(String type) {
-        String t = type != null ? type.trim().toLowerCase() : "";
+        if (type == null || type.trim().isEmpty()) {
+            return MaterialType.LINK;
+        }
+        String t = type.trim().toLowerCase();
         return switch (t) {
             case "pdf" -> MaterialType.PDF;
             case "zip" -> MaterialType.ZIP;

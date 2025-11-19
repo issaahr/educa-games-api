@@ -1,6 +1,5 @@
 package com.educagames.api.model.dto.module;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -35,10 +34,9 @@ public class ModuleRequestDTO {
     @Schema(description = "ID do curso ao qual o módulo será vinculado", example = "1")
     private Long courseId;
 
-    @Schema(description = "Lista de aulas do módulo")
+    @Schema(description = "Lista de aulas do módulo (opcional na atualização - se não fornecido, mantém as aulas existentes)")
     @Valid
-    @Builder.Default
-    private List<LessonRequestDTO> lessons = new ArrayList<>();
+    private List<LessonRequestDTO> lessons;
 
     @Schema(description = "Quiz do módulo")
     @Valid

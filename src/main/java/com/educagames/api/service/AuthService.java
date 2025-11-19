@@ -5,7 +5,6 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +18,7 @@ import com.educagames.api.exception.UnauthorizedException;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
 import com.educagames.api.model.dto.auth.InviteDetailsResponseDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
+import com.educagames.api.model.dto.auth.SelectClassRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.classroom.ClassroomInfoDTO;
 import com.educagames.api.model.entity.Invite;
@@ -274,6 +274,33 @@ public class AuthService {
      */
     public User getAuthenticatedUser() {
         return getAuthenticatedUserDetails().getUser(); // ← Reutiliza o método acima
+    }
+
+    /**
+     * Seleciona uma turma para o aluno autenticado.
+     * <p>
+     * Atualiza o campo `lastAccessAt` do vínculo aluno-turma para indicar que o aluno
+     * está visualizando esta turma. Isso permite que o sistema identifique qual turma
+     * o aluno está usando quando ele tem múltiplas turmas.
+     * </p>
+     *
+     * @param request DTO contendo o ID da turma a ser selecionada
+     * @throws NotFoundException se a turma não for encontrada ou o aluno não pertencer a ela
+     */
+    @Transactional
+    public void selectClass(SelectClassRequestDTO request) {
+        User student = getAuthenticatedUser();
+
+        if (student.getRole() != Role.STUDENT) {
+            throw new BadRequestException("Apenas alunos podem selecionar turmas");
+        }
+
+        StudentClassroom studentClassroom = studentClassroomRepository
+            .findActiveByStudentIdAndClassroomId(student.getId(), request.getClassroomId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada ou você não pertence a ela"));
+
+        studentClassroom.setLastAccessAt(LocalDateTime.now());
+        studentClassroomRepository.save(studentClassroom);
     }
 
     /**

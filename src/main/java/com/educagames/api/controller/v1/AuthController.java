@@ -17,6 +17,7 @@ import com.educagames.api.config.CustomUserDetails;
 import com.educagames.api.model.dto.auth.CompleteSignupRequest;
 import com.educagames.api.model.dto.auth.InviteDetailsResponseDTO;
 import com.educagames.api.model.dto.auth.LoginRequestDTO;
+import com.educagames.api.model.dto.auth.SelectClassRequestDTO;
 import com.educagames.api.model.dto.auth.UserProfileDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.SuccessResponse;
@@ -148,5 +149,27 @@ public class AuthController {
     public ResponseEntity<SuccessResponse<Void>> completeSignup(@Valid @RequestBody CompleteSignupRequest request) {
         authService.completeSignup(request);
         return ResponseUtils.created(null, "Cadastro realizado com sucesso!");
+    }
+
+    @Operation(summary = "Seleciona uma turma para o aluno", description = "Atualiza o último acesso à turma selecionada. Permite que o sistema identifique qual turma o aluno está visualizando quando ele tem múltiplas turmas ativas.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Turma selecionada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos ou usuário não é aluno",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": \"Apenas alunos podem selecionar turmas\", \"errors\": null}"))),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}"))),
+            @ApiResponse(responseCode = "404", description = "Turma não encontrada ou aluno não pertence a ela",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"message\": \"Turma não encontrada ou você não pertence a ela\", \"errors\": null}")))
+    })
+    @PostMapping("/select-class")
+    public ResponseEntity<Void> selectClass(@Valid @RequestBody SelectClassRequestDTO request) {
+        authService.selectClass(request);
+        return ResponseUtils.noContent();
     }
 }

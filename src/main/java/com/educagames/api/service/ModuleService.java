@@ -145,10 +145,12 @@ public class ModuleService {
 
     /**
      * Atualiza um módulo existente do instrutor autenticado.
-     * Atualiza título, vínculo com curso, aulas e quiz conforme informado no DTO.
+     * Atualiza apenas título e vínculo com curso.
+     * Para atualizar aulas, use {@link #updateLessons(Long, List)}.
+     * Para atualizar quiz, use {@link #setQuiz(Long, QuizDTO)}.
      *
      * @param id ID do módulo a ser atualizado
-     * @param dto DTO com os dados atualizados do módulo
+     * @param dto DTO com os dados atualizados do módulo (apenas title e courseId são processados)
      * @throws NotFoundException se o módulo ou curso não forem encontrados ou não pertencerem ao instrutor
      */
     @Transactional
@@ -156,6 +158,7 @@ public class ModuleService {
         User instructor = authService.getAuthenticatedUser();
         Module module = moduleRepository.findOneByIdAndInstructor(id, instructor.getId())
             .orElseThrow(() -> new NotFoundException("Módulo não encontrado"));
+
         module.setTitle(dto.getTitle());
         moduleRepository.save(module);
 
@@ -173,12 +176,6 @@ public class ModuleService {
                 .orderIndex(orderIndex)
                 .build();
             courseModuleRepository.save(newLink);
-        }
-
-        lessonService.updateLessonsFromDto(module, dto.getLessons());
-
-        if (dto.getQuiz() != null) {
-            quizService.replaceQuizFromDto(module, dto.getQuiz());
         }
     }
 

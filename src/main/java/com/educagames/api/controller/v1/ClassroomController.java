@@ -25,15 +25,19 @@ import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
 import com.educagames.api.model.dto.classroom.EditClassRequestDTO;
 import com.educagames.api.model.dto.classroom.StudentClassroomResponseDTO;
+import com.educagames.api.model.dto.classroom.StudentProfileDTO;
+import com.educagames.api.model.dto.classroom.StudentReportDTO;
 import com.educagames.api.model.dto.shared.ErrorResponse;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
 import com.educagames.api.model.dto.shared.OnlyIdsDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.dto.shared.SuccessResponse;
+import com.educagames.api.model.dto.student.RankingEntryDTO;
 import com.educagames.api.model.dto.user.ChangeUserStatusDTO;
 import com.educagames.api.repository.projection.CourseSummary;
 import com.educagames.api.service.ClassroomService;
 import com.educagames.api.service.CourseService;
+import com.educagames.api.service.StudentService;
 import com.educagames.api.util.ResponseUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +57,7 @@ public class ClassroomController {
 
     private final ClassroomService classroomService;
     private final CourseService courseService;
+    private final StudentService studentService;
 
     @Operation(summary = "Cria uma nova turma", description = "Cria uma nova turma associada ao instrutor autenticado. Apenas INSTRUCTOR pode criar turmas.")
     @ApiResponses(value = {
@@ -398,5 +403,139 @@ public class ClassroomController {
         Pageable pageable = PageRequest.of(page, size, sort);
         PageResponseDTO<CourseSummary> courses = courseService.listCoursesByClass(id , search, pageable);
         return ResponseUtils.ok(courses, null);
+    }
+
+    @Operation(
+        summary = "Obtém ranking de uma turma",
+        description = "Retorna ranking da turma ordenado por pontuação total. Inclui posição atual e anterior de cada aluno."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Ranking obtido com sucesso",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": null, \"data\": [{\"studentId\": 1, \"studentName\": \"João Silva\", \"score\": 1250, \"rank\": 1, \"previousRank\": 2, \"rankChange\": 1}]}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Usuário não autenticado",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Sem permissão para acessar ranking",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Turma não encontrada",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Turma não encontrada\", \"errors\": null}")
+            )
+        )
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("{id}/ranking")
+    public ResponseEntity<SuccessResponse<List<RankingEntryDTO>>> getClassroomRanking(@PathVariable Long id) {
+        List<RankingEntryDTO> ranking = studentService.getClassroomRanking(id);
+        return ResponseUtils.ok(ranking, null);
+    }
+
+    @Operation(
+        summary = "Obtém demonstrativo completo de alunos de uma turma",
+        description = "Retorna lista de alunos com módulo atual, pontuação, ranking, dias seguidos e último acesso."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Demonstrativo obtido com sucesso",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Turma não encontrada",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("/{id}/report")
+    public ResponseEntity<SuccessResponse<List<StudentReportDTO>>> getClassroomReport(@PathVariable Long id) {
+        List<StudentReportDTO> report = classroomService.getClassroomReport(id);
+        return ResponseUtils.ok(report, null);
+    }
+
+    @Operation(
+        summary = "Obtém perfil completo de um aluno",
+        description = "Retorna informações detalhadas do aluno na turma, incluindo pontuação, ranking, login streak e último acesso."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Perfil do aluno obtido com sucesso",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = SuccessResponse.class),
+                examples = @ExampleObject(
+                    value = "{\"message\": null, \"data\": {\"id\": 1, \"name\": \"João Silva\", \"email\": \"joao@email.com\", \"enrollment\": \"0001\", \"classroomId\": 1, \"className\": \"Turma A\", \"score\": 1250, \"rank\": 3, \"loginStreak\": 7, \"lastAccessAt\": \"2025-11-18T10:30:00\", \"active\": true, \"avatarUrl\": \"https://storage.example.com/avatars/1/avatar.jpg\"}}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Usuário não autenticado",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Token inválido ou expirado\", \"errors\": null}")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Sem permissão para acessar perfil do aluno",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Você não tem permissão para acessar este recurso\", \"errors\": null}")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Turma ou aluno não encontrados",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(value = "{\"message\": \"Aluno não encontrado nesta turma\", \"errors\": null}")
+            )
+        )
+    })
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    @GetMapping("{id}/students/{studentId}")
+    public ResponseEntity<SuccessResponse<StudentProfileDTO>> getStudentProfile(
+        @PathVariable Long id,
+        @PathVariable Long studentId
+    ) {
+        StudentProfileDTO profile = classroomService.getStudentProfile(id, studentId);
+        return ResponseUtils.ok(profile, null);
     }
 }

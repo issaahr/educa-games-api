@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.EntityManager;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.educagames.api.model.dto.quiz.QuizAlternativeDTO;
 import com.educagames.api.model.dto.quiz.QuizDTO;
 import com.educagames.api.model.dto.quiz.QuizQuestionDTO;
 import com.educagames.api.model.entity.Module;
@@ -17,7 +20,6 @@ import com.educagames.api.repository.QuizAlternativeRepository;
 import com.educagames.api.repository.QuizQuestionRepository;
 import com.educagames.api.repository.QuizRepository;
 
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -135,9 +137,58 @@ public class QuizService {
                             .map(QuizAlternative::getText)
                             .toList();
                         return QuizQuestionDTO.builder()
+                            .id(q.getId())
                             .text(q.getText())
                             .options(options)
                             .correctAnswer(correct)
+                            .points(q.getPoints())
+                            .build();
+                    })
+                    .toList();
+                return QuizDTO.builder()
+                    .id(quiz.getId())
+                    .questions(questionDTOs)
+                    .build();
+            })
+            .orElse(null);
+    }
+
+    /**
+     * Obtém o quiz de um módulo convertido para DTO sem a resposta correta (para alunos).
+     * IMPORTANTE: Retorna os IDs das questões e alternativas para que o frontend possa
+     * enviar as respostas corretamente. O campo 'correct' das alternativas é sempre null
+     * para não revelar a resposta correta ao aluno.
+     *
+     * @param module Módulo
+     * @return DTO do quiz ou null se o módulo não possuir quiz
+     */
+    @Transactional(readOnly = true)
+    public QuizDTO getQuizByModuleForStudent(Module module) {
+        return quizRepository.findByModule(module)
+            .map(quiz -> {
+                List<QuizQuestion> questions = quizQuestionRepository.findByQuiz(quiz);
+                List<QuizQuestionDTO> questionDTOs = questions.stream()
+                    .map(q -> {
+                        List<QuizAlternative> alternatives = quizAlternativeRepository.findByQuestion(q);
+
+                        List<QuizAlternativeDTO> alternativeDTOs = alternatives.stream()
+                            .map(alt -> QuizAlternativeDTO.builder()
+                                .id(alt.getId())
+                                .text(alt.getText())
+                                .correct(null)
+                                .build())
+                            .toList();
+
+                        List<String> options = alternatives.stream()
+                            .map(QuizAlternative::getText)
+                            .toList();
+
+                        return QuizQuestionDTO.builder()
+                            .id(q.getId())
+                            .text(q.getText())
+                            .alternatives(alternativeDTOs)
+                            .options(options)
+                            .correctAnswer(null)
                             .points(q.getPoints())
                             .build();
                     })

@@ -50,4 +50,37 @@ public interface StudentClassroomRepository extends JpaRepository<StudentClassro
         AND sc.classroom.active = true
         """)
     List<Object[]> findActiveClassroomIdAndNameByStudentId(@Param("studentId") Long studentId);
+
+    Optional<StudentClassroom> findByStudentIdAndClassroomIdAndActive(Long studentId, Long classroomId, boolean active);
+
+    @Query("""
+        SELECT sc FROM StudentClassroom sc
+        WHERE sc.student.id = :studentId
+        AND sc.classroom.id = :classroomId
+        AND sc.active = true
+        AND sc.classroom.active = true
+        """)
+    Optional<StudentClassroom> findActiveByStudentIdAndClassroomId(
+        @Param("studentId") Long studentId,
+        @Param("classroomId") Long classroomId
+    );
+
+    @Query("""
+        SELECT sc FROM StudentClassroom sc
+        WHERE sc.student.id = :studentId
+        AND sc.active = true
+        AND sc.classroom.active = true
+        ORDER BY sc.lastAccessAt DESC NULLS LAST, sc.createdAt DESC
+        """)
+    List<StudentClassroom> findActiveByStudentIdOrderedByLastAccess(@Param("studentId") Long studentId);
+
+    @Query("""
+        SELECT sc FROM StudentClassroom sc
+        WHERE sc.student.id = :studentId
+        AND sc.classroom.id = :classroomId
+        """)
+    Optional<StudentClassroom> findByStudentIdAndClassroomId(
+        @Param("studentId") Long studentId,
+        @Param("classroomId") Long classroomId
+    );
 }
