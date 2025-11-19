@@ -222,6 +222,15 @@ public class UserService {
         }
     }
 
+    /**
+     * Obtém o perfil do usuário autenticado.
+     * <p>
+     * Retorna informações básicas como ID, nome, email, descrição, data de nascimento e avatar.
+     * </p>
+     *
+     * @return DTO com os dados de perfil do usuário autenticado
+     * @throws NotFoundException se o usuário autenticado não for encontrado
+     */
     public ProfileResponseDTO getAuthenticatedUserProfile(){
         User authenticatedUser = authService.getAuthenticatedUser();
 

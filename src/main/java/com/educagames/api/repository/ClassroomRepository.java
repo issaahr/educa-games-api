@@ -10,12 +10,28 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.educagames.api.model.dto.classroom.ClassroomDTO;
 import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
 import com.educagames.api.model.entity.Classroom ;
 
 @Repository
 public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
-    List<Classroom> findByInstructorId(Long instructorId);
+    @Query("""
+        SELECT new com.educagames.api.model.dto.classroom.ClassroomDTO(
+            c.id,
+            c.name,
+            c.active,
+            c.createdAt
+        )
+        FROM Classroom c
+        WHERE c.instructor.id = :instructorId
+          AND c.active = :active
+        ORDER BY c.createdAt DESC
+    """)
+    List<ClassroomDTO> findActiveClassroomsByInstructorId(
+        @Param("instructorId") Long instructorId,
+        @Param("active") boolean active
+    );
 
     @Query("""
     SELECT c FROM Classroom c
@@ -34,19 +50,20 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     Optional<Classroom> findOneByIdAndInstructorId(Long id, Long instructorId);
 
     @Query("""
-        SELECT new com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO(
-            c.id,
-            c.name,
-            c.createdAt,
-            COUNT(sc),
-            0L,
-            c.active
-        )
-        FROM Classroom c
-        LEFT JOIN c.students sc
-        WHERE c.id = :classroomId
-          AND c.instructor.id = :instructorId
-        GROUP BY c.id, c.name, c.createdAt, c.active
+       SELECT new com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO(
+           c.id,
+           c.name,
+           c.createdAt,
+           COUNT(DISTINCT sc.id),
+           COUNT(DISTINCT cs.id),
+           c.active
+       )
+       FROM Classroom c
+       LEFT JOIN c.students sc
+       LEFT JOIN c.courses cs
+       WHERE c.id = :classroomId
+         AND c.instructor.id = :instructorId
+       GROUP BY c.id, c.name, c.createdAt, c.active
     """)
     Optional<ClassroomDetailsResponseDTO> findClassroomDetailsByIdAndInstructorId(
         @Param("classroomId") Long classroomId,

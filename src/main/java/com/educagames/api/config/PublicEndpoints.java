@@ -16,10 +16,10 @@ public class PublicEndpoints {
         "/swagger-ui/**",
         "/v3/api-docs/**",
         "/swagger-ui.html",
-        "/auth/login",
-        "/auth/logout",
-        "/auth/validate-invite",
-        "/auth/complete-signup",
+        "/v1/auth/login",
+        "/v1/auth/logout",
+        "/v1/auth/validate-invite",
+        "/v1/auth/complete-signup",
         "/actuator/health"
     );
 
@@ -33,7 +33,7 @@ public class PublicEndpoints {
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-ui.html",
-        "/auth/login"
+        "/v1/auth/login"
     );
 
     /**
@@ -41,7 +41,7 @@ public class PublicEndpoints {
      * Essas rotas expõem dados sensíveis e DEVEM ter Origin ou Referer válidos.
      */
     public static final List<String> SENSITIVE_ENDPOINTS = List.of(
-        "/auth/validate-invite",
-        "/auth/complete-signup"
+        "/v1/auth/validate-invite",
+        "/v1/auth/complete-signup"
     );
 }

@@ -1,5 +1,7 @@
 package com.educagames.api.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,12 +13,15 @@ import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
 import com.educagames.api.model.dto.classroom.EditClassRequestDTO;
 import com.educagames.api.model.dto.classroom.StudentClassroomResponseDTO;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
+import com.educagames.api.model.dto.shared.OnlyIdsDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.dto.user.ChangeUserStatusDTO;
 import com.educagames.api.model.entity.Classroom;
+import com.educagames.api.model.entity.Course;
 import com.educagames.api.model.entity.StudentClassroom;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.ClassroomRepository;
+import com.educagames.api.repository.CourseRepository;
 import com.educagames.api.repository.StudentClassroomRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,7 @@ public class ClassroomService {
     private final ClassroomRepository classroomRepository;
     private final StudentClassroomRepository studentClassroomRepository;
     private final AuthService authService;
+    private final CourseRepository courseRepository;
 
     /**
      * Cria uma nova turma associada ao instrutor autenticado.
@@ -233,5 +239,70 @@ public class ClassroomService {
             .orElseThrow(() -> new NotFoundException("Estudante não encontrado na turma"));
 
         studentClassroomRepository.delete(studentClassroom);
+    }
+
+    /**
+     * Lista as turmas ativas associadas ao professor autenticado
+     * @return Lista de turmas ativas
+     */
+    public List<ClassroomDTO> getAvailableClasses(){
+        User instructor = authService.getAuthenticatedUser();
+        return classroomRepository.findActiveClassroomsByInstructorId(instructor.getId(), true);
+    }
+
+    /**
+     * Vincula múltiplos cursos à turma do instrutor autenticado.
+     * <p>
+     * Valida a existência da turma e a propriedade pelo instrutor logado.
+     * Os cursos informados são filtrados para considerar apenas os pertencentes ao instrutor.
+     * Cursos já vinculados são ignorados.
+     * </p>
+     *
+     * @param classId   ID da turma que receberá os cursos
+     * @param courseIds IDs dos cursos a serem vinculados
+     * @throws NotFoundException caso a turma não exista ou não pertença ao instrutor
+     */
+    public void attachCoursesToClass(Long classId, OnlyIdsDTO courseIds) {
+        User instructor = authService.getAuthenticatedUser();
+
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classId, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
+
+        List<Course> courses = courseRepository.findByIdInAndInstructorId(
+            courseIds.getIds(),
+            instructor.getId()
+        );
+
+        courses.forEach(course -> {
+            if (!course.getClassrooms().contains(classroom)) {
+                course.getClassrooms().add(classroom);
+            }
+        });
+        courseRepository.saveAll(courses);
+    }
+
+    /**
+     * Desvincula um curso de uma turma do instrutor autenticado.
+     * <p>
+     * Valida a existência do curso e da turma e a propriedade pelo instrutor logado
+     * antes de realizar a operação.
+     * </p>
+     *
+     * @param classId  ID da turma
+     * @param courseId ID do curso a ser desvinculado
+     * @throws NotFoundException caso curso ou turma não existam ou não pertençam ao instrutor
+     */
+    public void detachCourseFromClass(Long classId, Long courseId) {
+        User instructor = authService.getAuthenticatedUser();
+
+        Course course = courseRepository.findOneByIdAndInstructorId(courseId, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Curso não encontrado"));
+
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classId, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
+
+        course.getClassrooms().remove(classroom);
+
+        courseRepository.save(course);
     }
 }

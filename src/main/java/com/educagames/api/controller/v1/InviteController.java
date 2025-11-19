@@ -1,4 +1,4 @@
-package com.educagames.api.controller;
+package com.educagames.api.controller.v1;
 
 import jakarta.validation.Valid;
 
@@ -35,7 +35,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/invite")
+@RequestMapping("/v1/invite")
 @RequiredArgsConstructor
 @Tag(name = "Convites", description = "Endpoints para gerenciamento de convites")
 public class InviteController {
