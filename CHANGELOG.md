@@ -7,6 +7,44 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.4.0] - 2025-11-18
+
+### Adicionado
+
+- Documentação Swagger completa para todos os endpoints de módulos com `@ApiResponses`, schemas e exemplos
+- Javadoc completo em todos os métodos dos services (`ModuleService`, `LessonService`, `QuizService`)
+- Migration V5 para criação de tabelas de módulos, aulas, quizzes e relacionamentos
+- DTOs específicos: `AddLessonsRequestDTO`, `UpdateLessonsRequestDTO` para requests de aulas
+- Validações completas em todos os DTOs com mensagens customizadas
+
+### Alterado
+
+- Separação de endpoints: `POST /v1/module/{id}/lessons` (adicionar) e `PUT /v1/module/{id}/lessons` (atualizar)
+- Separação de endpoints: `POST /v1/module/{id}/quiz` (criar) e `PUT /v1/module/{id}/quiz` (atualizar)
+- Unificação de endpoints multipart: ambos endpoints de lessons sempre aceitam multipart/form-data
+- Padronização de DTOs com `@Schema` para documentação OpenAPI
+- Refatoração de `ModuleService`: delegação de responsabilidades para `LessonService` e `QuizService`
+- Remoção de métodos manuais que sobrescreviam Lombok em `QuizQuestion`
+
+### Corrigido
+
+- Constraint UNIQUE em `quizzes.module_id` para garantir relação OneToOne
+- Uso de `EntityManager.flush()` e `clear()` em `QuizService.replaceQuizFromDto` para evitar conflitos de constraint
+
+### Técnico
+
+- Migration V5: criação de 9 tabelas (modules, lessons, lesson_materials, quizzes, quiz_questions, quiz_alternatives, course_modules, student_module_progress, student_lesson_progress)
+- Métodos privados extraídos em `ModuleService` para melhor organização
+- Métodos públicos expostos em `LessonService` e `QuizService` para uso por `ModuleService`
+
+### Notas
+
+- **Breaking Changes**: Nenhum
+- **Migration**: V5__modules_lessons_quizzes.sql deve ser executada
+- Para detalhes, consulte [docs/release-notes/v1.4.0.md](docs/release-notes/v1.4.0.md)
+
+---
+
 ## [1.3.0] - 2025-11-11
 
 ### Adicionado
@@ -151,6 +189,8 @@ Para documentação detalhada, consulte [docs/release-notes/v1.0.0.md](docs/rele
 
 ---
 
+[1.4.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.4.0
+[1.3.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.3.0
 [1.2.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.2.0
 [1.1.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.1.0
 [1.0.1]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.1
