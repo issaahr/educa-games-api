@@ -126,34 +126,34 @@ Acesse a documentação interativa:
 
 ## Endpoints disponíveis
 
-### 🔐 Autenticação (`/auth`)
+### 🔐 Autenticação (`/v1/auth`)
 
-- `POST /auth/login` - Login do usuário
-- `POST /auth/logout` - Logout do usuário
-- `GET /auth/me` - Dados do usuário autenticado
-- `GET /auth/validate-invite?token={token}` - Valida um token de convite
-- `POST /auth/complete-signup` - Finaliza cadastro via convite
+- `POST /v1/auth/login` - Login do usuário
+- `POST /v1/auth/logout` - Logout do usuário
+- `GET /v1/auth/me` - Dados do usuário autenticado
+- `GET /v1/auth/validate-invite?token={token}` - Valida um token de convite
+- `POST /v1/auth/complete-signup` - Finaliza cadastro via convite
 
-### 👥 Usuários (`/user`)
+### 👥 Usuários (`/v1/user`)
 
-- `GET /user/profile` - Perfil do usuário autenticado
-- `PATCH /user/profile` - Atualiza perfil (multipart com avatar opcional)
-- `GET /user/instructors` - Lista instrutores com paginação e busca (ADMIN)
-- `DELETE /user/instructors` - Exclui um instrutor (ADMIN)
-- `PUT /user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
+- `GET /v1/user/profile` - Perfil do usuário autenticado
+- `PATCH /v1/user/profile` - Atualiza perfil (multipart com avatar opcional)
+- `GET /v1/user/instructors` - Lista instrutores com paginação e busca (ADMIN)
+- `DELETE /v1/user/instructors` - Exclui um instrutor (ADMIN)
+- `PUT /v1/user/status` - Altera status (ativo/inativo) de usuário/instrutor (ADMIN)
 
-### 📧 Convites (`/invite`)
+### 📧 Convites (`/v1/invite`)
 
-- `POST /invite/send` - Envia um convite por email (ADMIN/INSTRUCTOR)
-- `GET /invite` - Lista convites com paginação e busca (ADMIN/INSTRUCTOR)
-- `DELETE /invite` - Exclui um convite (ADMIN/INSTRUCTOR)
-- `POST /invite/resend` - Reenvia um convite (ADMIN/INSTRUCTOR)
+- `POST /v1/invite/send` - Envia um convite por email (ADMIN/INSTRUCTOR)
+- `GET /v1/invite` - Lista convites com paginação e busca (ADMIN/INSTRUCTOR)
+- `DELETE /v1/invite` - Exclui um convite (ADMIN/INSTRUCTOR)
+- `POST /v1/invite/resend` - Reenvia um convite (ADMIN/INSTRUCTOR)
 
-### 🏫 Turmas (`/classroom`)
+### 🏫 Turmas (`/v1/classroom`)
 
-- `POST /classroom/create` - Cria uma nova turma (INSTRUCTOR)
-- `GET /classroom` - Lista turmas do instrutor autenticado (INSTRUCTOR)
-- `GET /classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
+- `POST /v1/classroom/create` - Cria uma nova turma (INSTRUCTOR)
+- `GET /v1/classroom` - Lista turmas do instrutor autenticado (INSTRUCTOR)
+- `GET /v1/classroom/{id}` - Obtém detalhes de uma turma específica (INSTRUCTOR)
 
 ### 🏥 Monitoramento
 

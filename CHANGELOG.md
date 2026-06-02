@@ -7,6 +7,56 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.5.0] - 2026-06-01
+
+### Adicionado
+
+- Sistema de **Badges** (insígnias) para estudantes:
+  - Entidade `StudentBadge` com vinculação entre aluno e badge
+  - Enums `BadgeType` e `BadgeCategory` para categorização
+  - `GET /v1/badges` para listagem de badges do estudante
+  - `POST /v1/badges/award-retroactive` para atribuição retroativa (INSTRUCTOR/ADMIN)
+- Gerenciamento de **Announcements** (avisos) por turma:
+  - Endpoints CRUD: `GET`, `GET/{id}`, `POST`, `PUT/{id}`, `DELETE/{id}` em `/v1/announcements`
+  - Suporte a paginação, busca e filtro por turma
+  - Visualização diferenciada para STUDENT (turmas ativas) e INSTRUCTOR/ADMIN
+- **Features de Estudante** expandidas:
+  - `POST /v1/auth/select-class` para seleção de turma
+  - `GET /v1/student/dashboard` com consolidação de progresso, pontos e badges
+  - `GET /v1/student/ranking` com ranking de estudantes por turma
+- **Melhorias em Aulas**:
+  - Suporte a upload de arquivos para materiais de aula
+  - Novo utilitário para validação e mapeamento de tipos MIME
+
+### Alterado
+
+- `OpenAPI.info.version` atualizado para `1.5.0`
+- Exemplos e lista de endpoints no `README.md` atualizados com prefixo `/v1`
+- Services (`ClassroomService`, `StudentService`) expandidos com integrações de badges e announcements
+
+### Corrigido
+
+- Ajuste no contexto de segurança (import em filtro de autenticação)
+- Sincronização de documentação (README, OpenAPI) com endpoints reais
+
+### Técnico
+
+- **Entidades**: `StudentBadge` adicionada com foreign keys e índices
+- **DTOs**: `BadgeDTO`, `StudentBadgeDTO`, `DashboardDTO`, `RankingEntryDTO`, `AnnouncementDTO`
+- **Repositories**: `StudentBadgeRepository`, `AnnouncementRepository`
+- **Services**: `BadgeService`, `StudentService`, `AnnouncementService` (novos/expandidos)
+- **Migration V8**: Criação de tabelas de badges (`student_badges`, `badges`, relacionamentos)
+- **Documentação Swagger**: Todos os endpoints com `@Operation`, `@ApiResponses` e exemplos JSON
+
+### Notas
+
+- **Breaking Changes**: Nenhum
+- **Migration**: V8__student_badges.sql deve ser executada
+- **Dependências**: Nenhuma nova dependência adicionada
+- Para detalhes, consulte [docs/release-notes/v1.5.0.md](docs/release-notes/v1.5.0.md)
+
+---
+
 ## [1.4.0] - 2025-11-18
 
 ### Adicionado
@@ -195,3 +245,4 @@ Para documentação detalhada, consulte [docs/release-notes/v1.0.0.md](docs/rele
 [1.1.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.1.0
 [1.0.1]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.1
 [1.0.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.0.0
+[1.5.0]: https://github.com/issaahr/educa-games-api/releases/tag/v1.5.0

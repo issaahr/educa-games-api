@@ -13,7 +13,7 @@ public class OpenApiConfig {
         return new OpenAPI()
             .info(new Info()
                 .title("EducaGames API")
-                .version("1.3.0")
+                .version("1.5.0")
                 .description("API para plataforma de ensino de educação.")
             );
     }
