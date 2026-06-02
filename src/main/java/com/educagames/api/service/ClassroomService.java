@@ -1,10 +1,13 @@
 package com.educagames.api.service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.educagames.api.exception.NotFoundException;
 import com.educagames.api.model.dto.classroom.ClassroomDTO;
@@ -12,17 +15,29 @@ import com.educagames.api.model.dto.classroom.ClassroomDetailsResponseDTO;
 import com.educagames.api.model.dto.classroom.CreateClassRequestDTO;
 import com.educagames.api.model.dto.classroom.EditClassRequestDTO;
 import com.educagames.api.model.dto.classroom.StudentClassroomResponseDTO;
+import com.educagames.api.model.dto.classroom.StudentProfileDTO;
+import com.educagames.api.model.dto.classroom.StudentReportDTO;
 import com.educagames.api.model.dto.shared.OnlyIdDTO;
 import com.educagames.api.model.dto.shared.OnlyIdsDTO;
 import com.educagames.api.model.dto.shared.PageResponseDTO;
+import com.educagames.api.model.dto.student.RankingEntryDTO;
 import com.educagames.api.model.dto.user.ChangeUserStatusDTO;
 import com.educagames.api.model.entity.Classroom;
 import com.educagames.api.model.entity.Course;
+import com.educagames.api.model.entity.CourseModule;
+import com.educagames.api.model.entity.Lesson;
+import com.educagames.api.model.entity.Module;
 import com.educagames.api.model.entity.StudentClassroom;
+import com.educagames.api.model.entity.StudentLessonProgress;
+import com.educagames.api.model.entity.StudentModuleProgress;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.ClassroomRepository;
+import com.educagames.api.repository.CourseModuleRepository;
 import com.educagames.api.repository.CourseRepository;
+import com.educagames.api.repository.LessonRepository;
 import com.educagames.api.repository.StudentClassroomRepository;
+import com.educagames.api.repository.StudentLessonProgressRepository;
+import com.educagames.api.repository.StudentModuleProgressRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +49,10 @@ public class ClassroomService {
     private final StudentClassroomRepository studentClassroomRepository;
     private final AuthService authService;
     private final CourseRepository courseRepository;
+    private final CourseModuleRepository courseModuleRepository;
+    private final LessonRepository lessonRepository;
+    private final StudentLessonProgressRepository studentLessonProgressRepository;
+    private final StudentModuleProgressRepository studentModuleProgressRepository;
 
     /**
      * Cria uma nova turma associada ao instrutor autenticado.
@@ -242,8 +261,9 @@ public class ClassroomService {
     }
 
     /**
-     * Lista as turmas ativas associadas ao professor autenticado
-     * @return Lista de turmas ativas
+     * Lista as turmas ativas associadas ao instrutor autenticado.
+     *
+     * @return lista de turmas ativas do instrutor
      */
     public List<ClassroomDTO> getAvailableClasses(){
         User instructor = authService.getAuthenticatedUser();
@@ -304,5 +324,258 @@ public class ClassroomService {
         course.getClassrooms().remove(classroom);
 
         courseRepository.save(course);
+    }
+
+    /**
+     * Obtém o perfil completo de um aluno em uma turma específica.
+     * <p>
+     * Valida que a turma pertence ao instrutor autenticado e que o aluno
+     * está vinculado à turma. Retorna informações incluindo pontuação,
+     * ranking, login streak e último acesso.
+     * </p>
+     *
+     * @param classroomId ID da turma
+     * @param studentId   ID do aluno
+     * @return perfil do aluno com dados da turma
+     * @throws NotFoundException caso turma ou aluno não sejam encontrados ou não pertençam ao instrutor
+     */
+    public StudentProfileDTO getStudentProfile(Long classroomId, Long studentId) {
+        User instructor = authService.getAuthenticatedUser();
+
+        // Valida que a turma pertence ao instrutor
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
+
+        // Busca o vínculo do aluno com a turma (pode ser ativo ou inativo)
+        StudentClassroom studentClassroom = studentClassroomRepository
+            .findByStudentIdAndClassroomId(studentId, classroomId)
+            .orElseThrow(() -> new NotFoundException("Aluno não encontrado nesta turma"));
+
+        User student = studentClassroom.getStudent();
+
+        Integer totalScore = calculateTotalScore(student, classroom);
+        Integer rank = calculateRank(student, classroom);
+
+        return StudentProfileDTO.builder()
+            .id(student.getId())
+            .name(student.getName())
+            .email(student.getEmail())
+            .enrollment(studentClassroom.getEnrollment())
+            .classroomId(classroom.getId())
+            .className(classroom.getName())
+            .score(totalScore)
+            .rank(rank)
+            .loginStreak(studentClassroom.getActualLoginStreak())
+            .lastAccessAt(studentClassroom.getLastAccessAt())
+            .active(studentClassroom.isActive())
+            .avatarUrl(student.getAvatarUrl())
+            .build();
+    }
+
+    /**
+     * Calcula a pontuação total de um aluno considerando apenas os módulos acessíveis à turma.
+     *
+     * @param student aluno cuja pontuação será calculada
+     * @param classroom turma para filtrar os módulos
+     * @return pontuação total do aluno na turma (0 se não houver pontos)
+     */
+    private Integer calculateTotalScore(User student, Classroom classroom) {
+        List<Module> accessibleModules = classroom.getCourses().stream()
+            .flatMap(course -> courseModuleRepository.findByCourseId(course.getId()).stream())
+            .map(CourseModule::getModule)
+            .distinct()
+            .toList();
+
+        List<StudentModuleProgress> progressList = studentModuleProgressRepository.findByStudent(student);
+
+        return progressList.stream()
+            .filter(progress -> accessibleModules.contains(progress.getModule()))
+            .mapToInt(progress -> progress.getPointsEarned() != null ? progress.getPointsEarned() : 0)
+            .sum();
+    }
+
+    /**
+     * Calcula a posição do aluno no ranking da turma.
+     * <p>
+     * Ordena todos os alunos ativos da turma por pontuação (maior para menor)
+     * e retorna a posição do aluno especificado.
+     * </p>
+     *
+     * @param student   aluno cujo ranking será calculado
+     * @param classroom turma para a qual calcular o ranking
+     * @return posição do aluno no ranking (1 = primeiro lugar)
+     */
+    private Integer calculateRank(User student, Classroom classroom) {
+        List<StudentClassroom> allStudents = studentClassroomRepository
+            .findAll()
+            .stream()
+            .filter(sc -> sc.getClassroom().getId().equals(classroom.getId()) && sc.isActive())
+            .toList();
+
+        List<RankingEntryDTO> ranking = allStudents.stream()
+            .map(sc -> {
+                User s = sc.getStudent();
+                Integer score = calculateTotalScore(s, classroom);
+                return RankingEntryDTO.builder()
+                    .studentId(s.getId())
+                    .studentName(s.getName())
+                    .score(score)
+                    .rank(0)
+                    .loginStreak(sc.getActualLoginStreak())
+                    .lastAccessAt(sc.getLastAccessAt())
+                    .build();
+            })
+            .sorted(Comparator.comparing(RankingEntryDTO::getScore).reversed()
+                .thenComparing(RankingEntryDTO::getStudentName))
+            .collect(Collectors.toList());
+
+        for (int i = 0; i < ranking.size(); i++) {
+            ranking.get(i).setRank(i + 1);
+        }
+
+        return ranking.stream()
+            .filter(r -> r.getStudentId().equals(student.getId()))
+            .findFirst()
+            .map(RankingEntryDTO::getRank)
+            .orElse(ranking.size() + 1);
+    }
+
+    /**
+     * Obtém o demonstrativo completo de alunos de uma turma (para instrutor).
+     * Inclui módulo atual, pontuação, ranking, dias seguidos e último acesso.
+     *
+     * @param classroomId ID da turma
+     * @return Lista de alunos com dados do demonstrativo
+     * @throws NotFoundException se a turma não for encontrada ou não pertencer ao instrutor
+     */
+    @Transactional(readOnly = true)
+    public List<StudentReportDTO> getClassroomReport(Long classroomId) {
+        User instructor = authService.getAuthenticatedUser();
+        Classroom classroom = classroomRepository.findOneByIdAndInstructorId(classroomId, instructor.getId())
+            .orElseThrow(() -> new NotFoundException("Turma não encontrada"));
+
+        // Busca todos os alunos ativos da turma
+        List<StudentClassroom> allStudents = studentClassroomRepository
+            .findAll()
+            .stream()
+            .filter(sc -> sc.getClassroom().getId().equals(classroomId) && sc.isActive())
+            .toList();
+
+        // Busca todos os cursos atribuídos à turma
+        List<Course> allCourses = courseRepository.findAll();
+        List<Course> courses = allCourses.stream()
+            .filter(course -> course.getClassrooms().stream()
+                .anyMatch(c -> c.getId().equals(classroomId)))
+            .collect(Collectors.toList());
+
+        // Busca todos os módulos dos cursos, ordenados por curso e ordem
+        List<Module> allModules = courses.stream()
+            .flatMap(course -> {
+                List<CourseModule> courseModules = courseModuleRepository.findByCourseId(course.getId());
+                return courseModules.stream()
+                    .sorted(Comparator.comparing(CourseModule::getOrderIndex))
+                    .map(CourseModule::getModule);
+            })
+            .collect(Collectors.toList());
+
+        // Cria mapa de progresso de módulos por aluno
+        java.util.Map<Long, java.util.Map<Long, StudentModuleProgress>> moduleProgressByStudent =
+            allStudents.stream()
+                .collect(Collectors.toMap(
+                    sc -> sc.getStudent().getId(),
+                    sc -> {
+                        List<StudentModuleProgress> progressList = studentModuleProgressRepository
+                            .findByStudent(sc.getStudent());
+                        return progressList.stream()
+                            .collect(Collectors.toMap(
+                                p -> p.getModule().getId(),
+                                p -> p
+                            ));
+                    }
+                ));
+
+        // Cria mapa de progresso de aulas por aluno
+        java.util.Map<Long, java.util.Map<Long, StudentLessonProgress>> lessonProgressByStudent =
+            allStudents.stream()
+                .collect(Collectors.toMap(
+                    sc -> sc.getStudent().getId(),
+                    sc -> {
+                        List<StudentLessonProgress> progressList = studentLessonProgressRepository
+                            .findByStudent(sc.getStudent());
+                        return progressList.stream()
+                            .collect(Collectors.toMap(
+                                p -> p.getLesson().getId(),
+                                p -> p
+                            ));
+                    }
+                ));
+
+        // Função para verificar se um módulo está completo
+        java.util.function.Function<Module, java.util.function.Function<User, Boolean>> isModuleComplete =
+            module -> student -> {
+                java.util.Map<Long, StudentModuleProgress> studentModuleProgress =
+                    moduleProgressByStudent.getOrDefault(student.getId(), java.util.Collections.emptyMap());
+                StudentModuleProgress progress = studentModuleProgress.get(module.getId());
+
+                if (progress == null) {
+                    return false;
+                }
+
+                // Verifica se todas as aulas foram concluídas
+                List<Lesson> lessons = lessonRepository.findByModuleOrderByOrderIndexAsc(module);
+                java.util.Map<Long, StudentLessonProgress> studentLessonProgress =
+                    lessonProgressByStudent.getOrDefault(student.getId(), java.util.Collections.emptyMap());
+
+                boolean allLessonsCompleted = lessons.stream()
+                    .allMatch(lesson -> {
+                        StudentLessonProgress lessonProgress = studentLessonProgress.get(lesson.getId());
+                        return lessonProgress != null && lessonProgress.isCompleted();
+                    });
+
+                return allLessonsCompleted && progress.isCompletedQuiz();
+            };
+
+        // Função para encontrar o módulo atual de um aluno
+        java.util.function.Function<User, String> findCurrentModule = student -> {
+            // Encontra o primeiro módulo não completo
+            for (Module module : allModules) {
+                if (!isModuleComplete.apply(module).apply(student)) {
+                    return module.getTitle();
+                }
+            }
+            // Se todos os módulos estão completos, retorna o último
+            if (!allModules.isEmpty()) {
+                return allModules.get(allModules.size() - 1).getTitle();
+            }
+            return "N/A";
+        };
+
+        // Cria a lista de demonstrativo
+        List<StudentReportDTO> report = allStudents.stream()
+            .map(sc -> {
+                User student = sc.getStudent();
+                Integer score = calculateTotalScore(student, classroom);
+                String currentModule = findCurrentModule.apply(student);
+
+                return StudentReportDTO.builder()
+                    .studentId(student.getId())
+                    .studentName(student.getName())
+                    .currentModule(currentModule)
+                    .score(score)
+                    .rank(0)
+                    .loginStreak(sc.getActualLoginStreak())
+                    .lastAccessAt(sc.getLastAccessAt())
+                    .build();
+            })
+            .sorted(Comparator.comparing(StudentReportDTO::getScore).reversed()
+                .thenComparing(StudentReportDTO::getStudentName))
+            .collect(Collectors.toList());
+
+        // Atribui as posições no ranking
+        for (int i = 0; i < report.size(); i++) {
+            report.get(i).setRank(i + 1);
+        }
+
+        return report;
     }
 }

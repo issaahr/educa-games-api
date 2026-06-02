@@ -25,9 +25,12 @@ import com.educagames.api.model.enums.MaterialType;
 import com.educagames.api.repository.LessonMaterialRepository;
 import com.educagames.api.repository.LessonRepository;
 import com.educagames.api.repository.ModuleRepository;
+import com.educagames.api.repository.StudentLessonProgressRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LessonService {
@@ -35,6 +38,7 @@ public class LessonService {
     private final ModuleRepository moduleRepository;
     private final LessonRepository lessonRepository;
     private final LessonMaterialRepository lessonMaterialRepository;
+    private final StudentLessonProgressRepository studentLessonProgressRepository;
     private final AuthService authService;
     private final UploadService uploadService;
 
@@ -57,6 +61,15 @@ public class LessonService {
         }
     }
 
+    /**
+     * Salva os materiais de uma aula a partir de uma lista de recursos.
+     * <p>
+     * Filtra recursos que não são do YouTube e cria entidades LessonMaterial para cada um.
+     * </p>
+     *
+     * @param lesson   aula à qual os materiais serão associados
+     * @param resources lista de recursos DTO contendo os materiais
+     */
     private void saveLessonMaterials(Lesson lesson, List<ResourceDTO> resources) {
         List<ResourceDTO> materials = filterNonYoutubeResources(resources);
         for (ResourceDTO r : materials) {
@@ -77,13 +90,15 @@ public class LessonService {
      * @param lessonDtos Lista completa de DTOs das aulas (substitui todas as aulas existentes)
      */
     @Transactional
-    public void updateLessonsFromDto(Module module, List<LessonRequestDTO> lessonDtos) {
+    public void updateLessonsFromDto(Module module, List<LessonRequestDTO> lessonDtos, List<MultipartFile> files) {
         List<Lesson> existingLessons = lessonRepository.findByModuleOrderByOrderIndexAsc(module);
         Map<Long, Lesson> byId = existingLessons.stream()
             .filter(l -> l.getId() != null)
             .collect(Collectors.toMap(Lesson::getId, l -> l));
 
         Set<Long> keepLessonIds = new HashSet<>();
+        List<MultipartFile> availableFiles = files != null ? new ArrayList<>(files) : new ArrayList<>();
+        int[] fileIndex = {0};
 
         if (lessonDtos != null) {
             for (int i = 0; i < lessonDtos.size(); i++) {
@@ -99,15 +114,29 @@ public class LessonService {
                 lessonRepository.save(target);
                 if (target.getId() != null) keepLessonIds.add(target.getId());
 
-                updateLessonMaterials(target, dto.getResources());
+                updateLessonMaterials(module.getId(), target, dto.getResources(), availableFiles, fileIndex);
             }
         }
 
-        existingLessons.stream()
+        List<Lesson> lessonsToDelete = existingLessons.stream()
             .filter(l -> l.getId() == null || !keepLessonIds.contains(l.getId()))
-            .forEach(lessonRepository::delete);
+            .toList();
+
+        for (Lesson lesson : lessonsToDelete) {
+            studentLessonProgressRepository.deleteAll(
+                studentLessonProgressRepository.findByLesson(lesson)
+            );
+            lessonRepository.delete(lesson);
+        }
     }
 
+    /**
+     * Atualiza os campos de uma aula a partir de um DTO.
+     *
+     * @param lesson     aula a ser atualizada
+     * @param dto        DTO com os novos dados da aula
+     * @param orderIndex índice de ordenação da aula no módulo
+     */
     private void updateLessonFromDto(Lesson lesson, LessonRequestDTO dto, int orderIndex) {
         lesson.setOrderIndex(orderIndex);
         lesson.setTitle(Optional.ofNullable(dto.getTitle()).orElse(""));
@@ -116,7 +145,20 @@ public class LessonService {
         lesson.setVideoLink(Optional.ofNullable(extractYoutubeUrl(dto.getResources())).orElse(""));
     }
 
-    private void updateLessonMaterials(Lesson lesson, List<ResourceDTO> resources) {
+    /**
+     * Atualiza os materiais de uma aula a partir de uma lista de recursos.
+     * <p>
+     * Materiais com ID são atualizados, sem ID são criados, e materiais existentes
+     * não presentes na lista são removidos.
+     * </p>
+     *
+     * @param moduleId ID do módulo (para upload de arquivos)
+     * @param lesson   aula cujos materiais serão atualizados
+     * @param resources lista de recursos DTO contendo os materiais
+     * @param availableFiles lista de arquivos disponíveis para upload
+     * @param fileIndex array com índice atual dos arquivos (usado para manter ordem sequencial)
+     */
+    private void updateLessonMaterials(Long moduleId, Lesson lesson, List<ResourceDTO> resources, List<MultipartFile> availableFiles, int[] fileIndex) {
         List<ResourceDTO> materials = filterNonYoutubeResources(resources);
         List<LessonMaterial> existingMaterials = lessonMaterialRepository.findByLesson(lesson);
         Map<Long, LessonMaterial> matsById = existingMaterials.stream()
@@ -131,15 +173,78 @@ public class LessonService {
                 mat.setLesson(lesson);
             }
             mat.setName(Optional.ofNullable(r.getLabel()).orElse(""));
-            mat.setType(mapMaterialType(r.getType()));
-            mat.setUrl(Optional.ofNullable(r.getContent()).orElse(""));
+            if (r.getType() != null && !r.getType().trim().isEmpty()) {
+                mat.setType(mapMaterialType(r.getType()));
+            } else if (mat.getId() == null) {
+                mat.setType(MaterialType.LINK);
+            }
+
+            String materialTypeStr = materialTypeToString(mat.getType());
+            String content = r.getContent();
+
+            if ("link".equalsIgnoreCase(materialTypeStr)) {
+                mat.setUrl(Optional.ofNullable(content).orElse(""));
+            } else {
+                boolean hasExistingUrl = mat.getId() != null && mat.getUrl() != null && !mat.getUrl().isEmpty();
+                boolean needsNewFile = (content == null || content.isBlank()) && !hasExistingUrl;
+
+                if (needsNewFile) {
+                    MultipartFile fileToUse = null;
+                    int fileIndexToRemove = -1;
+
+                    for (int i = 0; i < availableFiles.size(); i++) {
+                        try {
+                            MultipartFile f = availableFiles.get(i);
+                            String fileType = mapContentTypeToMaterialType(f.getContentType());
+                            if (fileType.equals(materialTypeStr)) {
+                                fileToUse = f;
+                                fileIndexToRemove = i;
+                                break;
+                            }
+                        } catch (Exception e) {
+                            continue;
+                        }
+                    }
+
+                    if (fileToUse != null) {
+                        try {
+                            String publicUrl = uploadService.uploadLessonContent(moduleId, lesson.getId(), fileToUse);
+                            mat.setUrl(publicUrl);
+                            availableFiles.remove(fileIndexToRemove);
+                        } catch (Exception e) {
+                            log.error("Erro ao fazer upload de arquivo {} para material '{}' da aula {}: {}",
+                                fileToUse.getOriginalFilename(), mat.getName(), lesson.getId(), e.getMessage(), e);
+                            mat.setUrl("");
+                            availableFiles.remove(fileIndexToRemove);
+                        }
+                    } else {
+                        if (mat.getId() == null) {
+                            log.error("Nenhum arquivo do tipo '{}' encontrado para novo material '{}' na aula {}",
+                                materialTypeStr, mat.getName(), lesson.getId());
+                        }
+                        mat.setUrl("");
+                    }
+                } else if (content != null && !content.isBlank()) {
+                    mat.setUrl(content);
+                } else if (!hasExistingUrl) {
+                    mat.setUrl("");
+                }
+            }
+
             lessonMaterialRepository.save(mat);
             if (mat.getId() != null) keepMaterialIds.add(mat.getId());
         }
 
+        // Deletar materiais que não estão mais na lista
         existingMaterials.stream()
             .filter(m -> m.getId() == null || !keepMaterialIds.contains(m.getId()))
-            .forEach(lessonMaterialRepository::delete);
+            .forEach(material -> {
+                // Se o material tem um arquivo (não é LINK), deletar do bucket também
+                if (material.getType() != MaterialType.LINK && material.getUrl() != null && !material.getUrl().isEmpty()) {
+                    uploadService.deleteLessonFile(material.getUrl());
+                }
+                lessonMaterialRepository.delete(material);
+            });
     }
 
     /**
@@ -278,7 +383,8 @@ public class LessonService {
             ct.equals("image/gif") ||
             ct.equals("image/webp") ||
             ct.equals("application/pdf") ||
-            ct.equals("application/zip");
+            ct.equals("application/zip") ||
+            ct.equals("application/x-zip-compressed");
     }
 
     /**
@@ -288,7 +394,10 @@ public class LessonService {
      * @return MaterialType correspondente ou LINK como padrão
      */
     public MaterialType mapMaterialType(String type) {
-        String t = type != null ? type.trim().toLowerCase() : "";
+        if (type == null || type.trim().isEmpty()) {
+            return MaterialType.LINK;
+        }
+        String t = type.trim().toLowerCase();
         return switch (t) {
             case "pdf" -> MaterialType.PDF;
             case "zip" -> MaterialType.ZIP;
@@ -309,7 +418,7 @@ public class LessonService {
         String c = ct.toLowerCase();
         if (c.startsWith("image/")) return "image";
         if ("application/pdf".equals(c)) return "pdf";
-        if ("application/zip".equals(c)) return "zip";
+        if ("application/zip".equals(c) || "application/x-zip-compressed".equals(c)) return "zip";
         return "link";
     }
 
@@ -384,12 +493,15 @@ public class LessonService {
      *
      * @param module Módulo ao qual as aulas serão adicionadas
      * @param lessonDtos Lista de DTOs das aulas a serem adicionadas
+     * @param files Lista de arquivos para upload (opcional)
      */
     @Transactional
-    public void addLessonsToModule(Module module, List<LessonRequestDTO> lessonDtos) {
+    public void addLessonsToModule(Module module, List<LessonRequestDTO> lessonDtos, List<MultipartFile> files) {
         if (lessonDtos == null || lessonDtos.isEmpty()) return;
         List<Lesson> existing = lessonRepository.findByModuleOrderByOrderIndexAsc(module);
         int startIndex = existing.size();
+        List<MultipartFile> availableFiles = files != null ? new ArrayList<>(files) : new ArrayList<>();
+        int[] fileIndex = {0};
 
         for (int i = 0; i < lessonDtos.size(); i++) {
             LessonRequestDTO dto = lessonDtos.get(i);
@@ -397,7 +509,7 @@ public class LessonService {
             lesson.setModule(module);
             updateLessonFromDto(lesson, dto, startIndex + i);
             lessonRepository.save(lesson);
-            saveLessonMaterials(lesson, dto.getResources());
+            updateLessonMaterials(module.getId(), lesson, dto.getResources(), availableFiles, fileIndex);
         }
     }
 

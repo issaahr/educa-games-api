@@ -1,6 +1,5 @@
 package com.educagames.api.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -20,7 +19,6 @@ import com.educagames.api.model.dto.shared.PageResponseDTO;
 import com.educagames.api.model.entity.Course;
 import com.educagames.api.model.entity.CourseModule;
 import com.educagames.api.model.entity.Lesson;
-import com.educagames.api.model.entity.LessonMaterial;
 import com.educagames.api.model.entity.Module;
 import com.educagames.api.model.entity.User;
 import com.educagames.api.repository.CourseModuleRepository;
@@ -28,7 +26,9 @@ import com.educagames.api.repository.CourseRepository;
 import com.educagames.api.repository.ModuleRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ModuleService {
@@ -145,10 +145,12 @@ public class ModuleService {
 
     /**
      * Atualiza um módulo existente do instrutor autenticado.
-     * Atualiza título, vínculo com curso, aulas e quiz conforme informado no DTO.
+     * Atualiza apenas título e vínculo com curso.
+     * Para atualizar aulas, use {@link #updateLessons(Long, List)}.
+     * Para atualizar quiz, use {@link #setQuiz(Long, QuizDTO)}.
      *
      * @param id ID do módulo a ser atualizado
-     * @param dto DTO com os dados atualizados do módulo
+     * @param dto DTO com os dados atualizados do módulo (apenas title e courseId são processados)
      * @throws NotFoundException se o módulo ou curso não forem encontrados ou não pertencerem ao instrutor
      */
     @Transactional
@@ -156,6 +158,7 @@ public class ModuleService {
         User instructor = authService.getAuthenticatedUser();
         Module module = moduleRepository.findOneByIdAndInstructor(id, instructor.getId())
             .orElseThrow(() -> new NotFoundException("Módulo não encontrado"));
+
         module.setTitle(dto.getTitle());
         moduleRepository.save(module);
 
@@ -174,12 +177,6 @@ public class ModuleService {
                 .build();
             courseModuleRepository.save(newLink);
         }
-
-        lessonService.updateLessonsFromDto(module, dto.getLessons());
-
-        if (dto.getQuiz() != null) {
-            quizService.replaceQuizFromDto(module, dto.getQuiz());
-        }
     }
 
     /**
@@ -193,7 +190,7 @@ public class ModuleService {
     @Transactional
     public void addLessons(Long moduleId, List<LessonRequestDTO> lessonDtos) {
         Module module = findModuleByIdAndInstructor(moduleId);
-        lessonService.addLessonsToModule(module, lessonDtos);
+        lessonService.addLessonsToModule(module, lessonDtos, null);
     }
 
     /**
@@ -209,16 +206,8 @@ public class ModuleService {
     @Transactional
     public void addLessons(Long moduleId, List<LessonRequestDTO> lessonDtos, List<MultipartFile> files) {
         Module module = findModuleByIdAndInstructor(moduleId);
-        List<Lesson> before = lessonService.getLessonsByModule(module);
-        int startIndex = before.size();
-
         validateFiles(files);
-        addLessons(moduleId, lessonDtos);
-
-        if (files != null && !files.isEmpty()) {
-            List<Lesson> newLessons = lessonService.getLessonsByModuleWithMinOrderIndex(module, startIndex);
-            applyFilesToMaterials(moduleId, files, newLessons);
-        }
+        lessonService.addLessonsToModule(module, lessonDtos, files);
     }
 
     /**
@@ -232,7 +221,7 @@ public class ModuleService {
     @Transactional
     public void updateLessons(Long moduleId, List<LessonRequestDTO> lessonDtos) {
         Module module = findModuleByIdAndInstructor(moduleId);
-        lessonService.updateLessonsFromDto(module, lessonDtos);
+        lessonService.updateLessonsFromDto(module, lessonDtos, null);
     }
 
     /**
@@ -250,12 +239,7 @@ public class ModuleService {
     public void updateLessons(Long moduleId, List<LessonRequestDTO> lessonDtos, List<MultipartFile> files) {
         Module module = findModuleByIdAndInstructor(moduleId);
         validateFiles(files);
-        lessonService.updateLessonsFromDto(module, lessonDtos);
-
-        if (files != null && !files.isEmpty()) {
-            List<Lesson> lessons = lessonService.getLessonsByModule(module);
-            applyFilesToMaterials(moduleId, files, lessons);
-        }
+        lessonService.updateLessonsFromDto(module, lessonDtos, files);
     }
 
     /**
@@ -323,34 +307,6 @@ public class ModuleService {
             String ct = file.getContentType();
             if (ct == null || !lessonService.isAllowedLessonContentType(ct)) {
                 throw new BadRequestException("Tipo de arquivo não permitido. Tipos aceitos: PNG, JPEG, GIF, WebP, PDF ou ZIP.");
-            }
-        }
-    }
-
-    /**
-     * Aplica arquivos aos materiais das aulas que não possuem URL.
-     * Os arquivos são associados aos materiais com base no tipo de conteúdo.
-     *
-     * @param moduleId ID do módulo
-     * @param files Lista de arquivos a serem aplicados
-     * @param lessons Lista de aulas cujos materiais receberão os arquivos
-     */
-    private void applyFilesToMaterials(Long moduleId, List<MultipartFile> files, List<Lesson> lessons) {
-        List<MultipartFile> queue = new ArrayList<>(files);
-        for (Lesson l : lessons) {
-            List<LessonMaterial> mats = lessonService.getMaterialsByLesson(l);
-            for (LessonMaterial m : mats) {
-                if (m.getUrl() != null && !m.getUrl().isBlank()) continue;
-                String targetType = lessonService.materialTypeToString(m.getType());
-                MultipartFile match = queue.stream()
-                    .filter(f -> lessonService.mapContentTypeToMaterialType(f.getContentType()).equals(targetType))
-                    .findFirst()
-                    .orElse(null);
-                if (match != null) {
-                    lessonService.updateLessonMaterial(moduleId, l.getId(), m.getId(), match);
-                    queue.remove(match);
-                    if (queue.isEmpty()) return;
-                }
             }
         }
     }

@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.educagames.api.model.dto.quiz.QuizAlternativeDTO;
 import com.educagames.api.model.dto.quiz.QuizDTO;
 import com.educagames.api.model.dto.quiz.QuizQuestionDTO;
 import com.educagames.api.model.entity.Module;
@@ -57,6 +58,13 @@ public class QuizService {
         }
     }
 
+    /**
+     * Cria uma questão de quiz a partir de um DTO.
+     *
+     * @param quiz quiz ao qual a questão será associada
+     * @param dto  DTO com os dados da questão
+     * @return entidade QuizQuestion criada
+     */
     private QuizQuestion createQuestion(Quiz quiz, QuizQuestionDTO dto) {
         QuizQuestion question = new QuizQuestion();
         question.setQuiz(quiz);
@@ -65,6 +73,15 @@ public class QuizService {
         return question;
     }
 
+    /**
+     * Salva as alternativas de uma questão de quiz.
+     * <p>
+     * Marca como correta a alternativa cujo texto corresponde ao campo correctAnswer do DTO.
+     * </p>
+     *
+     * @param question questão à qual as alternativas serão associadas
+     * @param dto      DTO contendo as opções e a resposta correta
+     */
     private void saveQuestionAlternatives(QuizQuestion question, QuizQuestionDTO dto) {
         String correct = Optional.ofNullable(dto.getCorrectAnswer()).orElse("");
         List<String> options = Optional.ofNullable(dto.getOptions()).orElseGet(ArrayList::new);
@@ -92,6 +109,11 @@ public class QuizService {
         saveQuizFromDto(module, quizDto);
     }
 
+    /**
+     * Remove um quiz e todas as suas questões e alternativas associadas.
+     *
+     * @param quiz quiz a ser removido
+     */
     private void deleteQuiz(Quiz quiz) {
         List<QuizQuestion> questions = quizQuestionRepository.findByQuiz(quiz);
         questions.forEach(question -> {
@@ -136,9 +158,58 @@ public class QuizService {
                             .map(QuizAlternative::getText)
                             .toList();
                         return QuizQuestionDTO.builder()
+                            .id(q.getId())
                             .text(q.getText())
                             .options(options)
                             .correctAnswer(correct)
+                            .points(q.getPoints())
+                            .build();
+                    })
+                    .toList();
+                return QuizDTO.builder()
+                    .id(quiz.getId())
+                    .questions(questionDTOs)
+                    .build();
+            })
+            .orElse(null);
+    }
+
+    /**
+     * Obtém o quiz de um módulo convertido para DTO sem a resposta correta (para alunos).
+     * IMPORTANTE: Retorna os IDs das questões e alternativas para que o frontend possa
+     * enviar as respostas corretamente. O campo 'correct' das alternativas é sempre null
+     * para não revelar a resposta correta ao aluno.
+     *
+     * @param module Módulo
+     * @return DTO do quiz ou null se o módulo não possuir quiz
+     */
+    @Transactional(readOnly = true)
+    public QuizDTO getQuizByModuleForStudent(Module module) {
+        return quizRepository.findByModule(module)
+            .map(quiz -> {
+                List<QuizQuestion> questions = quizQuestionRepository.findByQuiz(quiz);
+                List<QuizQuestionDTO> questionDTOs = questions.stream()
+                    .map(q -> {
+                        List<QuizAlternative> alternatives = quizAlternativeRepository.findByQuestion(q);
+
+                        List<QuizAlternativeDTO> alternativeDTOs = alternatives.stream()
+                            .map(alt -> QuizAlternativeDTO.builder()
+                                .id(alt.getId())
+                                .text(alt.getText())
+                                .correct(null)
+                                .build())
+                            .toList();
+
+                        List<String> options = alternatives.stream()
+                            .map(QuizAlternative::getText)
+                            .toList();
+
+                        return QuizQuestionDTO.builder()
+                            .id(q.getId())
+                            .text(q.getText())
+                            .alternatives(alternativeDTOs)
+                            .options(options)
+                            .correctAnswer(null)
                             .points(q.getPoints())
                             .build();
                     })
